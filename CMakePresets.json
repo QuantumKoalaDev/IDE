@@ -1,0 +1,27 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 20
+    },
+    "configurePresets": [
+        {
+            "name": "build-clang-debug",
+            "description": "Build with Clang",
+            "generator": "Ninja",
+            "binaryDir": "build",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_BUILD_TYPE":"Debug"
+            
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "build-clang-debug",
+            "configurePreset": "build-clang-debug"
+        }
+    ]
+}
