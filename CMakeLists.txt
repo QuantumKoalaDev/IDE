@@ -27,17 +27,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # target_include_directories(MyAppBackend PUBLIC include)
 # enable_pch(MyAppBackend src/Backend/pch.hpp)
 
-# # UI
-# add_library(MyAppUI STATIC
-#     src/UI/Editor.cpp
-#     src/UI/Editor.hpp
-# )
+# UI
+add_library(IDEUI STATIC
+    src/UI/Window/OpenGLWindow.cpp
+    src/UI/Window/OpenGLWindow.h
+    src/UI/Toolbar/Toolbar.cpp
+    src/UI/Toolbar/Toolbar.h
+)
+target_link_libraries(IDEUI PUBLIC GL GLEW X11)
 # target_link_libraries(MyAppUI PUBLIC MyAppCore imgui)
 # target_include_directories(MyAppUI PUBLIC include)
 # enable_pch(MyAppUI src/UI/pch.hpp)
 
 # Main executable
 add_executable(IDE.out src/main.cpp)
+target_link_libraries(IDE.out PRIVATE IDEUI)
 # target_link_libraries(MyApp PRIVATE MyAppCore MyAppBackend MyAppUI)
 
 
