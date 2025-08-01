@@ -7,18 +7,29 @@
 #include <GL/glxext.h>
 #include <unistd.h>
 
+#include <vector>
+
+#include "../Renderer/FontRenderer/FontRenderer.h"
 #include "../Toolbar/Toolbar.h"
 
+
+// forward declarations
+class IWidget;
 /*
     
 */
 class OpenGLWindow
 {
     public:
-        bool createWindow(char* title);
+        bool createWindow(char* title, int height, int width);
         void deleteWindow();
 
         void start();
+
+        void addWidget(IWidget* widget);
+
+        // gets replaced later
+        GLuint getProgramm() { return m_program; }
         
         private:
         Display* m_dispaly = nullptr;
@@ -33,7 +44,8 @@ class OpenGLWindow
 
         bool m_running = true;
         
-        Toolbar* m_toolbar = nullptr;
+        FontRenderer* m_fontRenderer = nullptr;
+        std::vector<IWidget*> m_widgetList;
         
         
         GLuint createShader(GLenum type, const char* source);

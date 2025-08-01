@@ -33,8 +33,12 @@ add_library(IDEUI STATIC
     src/UI/Window/OpenGLWindow.h
     src/UI/Toolbar/Toolbar.cpp
     src/UI/Toolbar/Toolbar.h
+    src/UI/Renderer/FontRenderer/FontRenderer.cpp
+    src/UI/Renderer/FontRenderer/FontRenderer.h
 )
-target_link_libraries(IDEUI PUBLIC GL GLEW X11)
+find_package(Freetype REQUIRED)
+target_include_directories(IDEUI PUBLIC ${FREETYPE_INCLUDE_DIRS})
+target_link_libraries(IDEUI PUBLIC GL GLEW X11 ${FREETYPE_LIBRARIES})
 # target_link_libraries(MyAppUI PUBLIC MyAppCore imgui)
 # target_include_directories(MyAppUI PUBLIC include)
 # enable_pch(MyAppUI src/UI/pch.hpp)

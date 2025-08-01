@@ -1,7 +1,7 @@
 #include "OpenGLWindow.h"
 
 #include <iostream>
-
+#include <filesystem>
 
 
 static int visualAttribs[] =
@@ -71,7 +71,7 @@ GLuint OpenGLWindow::createShader(GLenum type, const char* source)
     return shader;
 }
 
-bool OpenGLWindow::createWindow(char* title)
+bool OpenGLWindow::createWindow(char* title, int height, int width)
 {
     m_dispaly = XOpenDisplay(nullptr);
     if (!m_dispaly)
@@ -94,7 +94,7 @@ bool OpenGLWindow::createWindow(char* title)
     swa.event_mask = ExposureMask | KeyPressMask | StructureNotifyMask;
 
     m_win = XCreateWindow(m_dispaly, RootWindow(m_dispaly, vi->screen),
-        0, 0, 640, 480, 0, vi->depth, InputOutput,
+        0, 0, width, height, 0, vi->depth, InputOutput,
         vi->visual, CWColormap | CWEventMask, &swa
     );
 
@@ -132,7 +132,9 @@ bool OpenGLWindow::createWindow(char* title)
     glEnableVertexAttribArray(0);
 
     // Toolbar
-    m_toolbar = new Toolbar(640, 480, m_program);
+    std::filesystem::path currentPath = std::filesystem::current_path().append("src/UI/Fonts/Ubuntu-Regular.ttf");
+    m_fontRenderer = new FontRenderer(currentPath.c_str(), 40.f);
+    m_widgetList.push_back(new Toolbar(640, 480, m_program));
 
     return true;
 }
@@ -149,8 +151,14 @@ void OpenGLWindow::deleteWindow()
     XCloseDisplay(m_dispaly);
 
     // Toolbar
-    delete m_toolbar;
-    m_toolbar = nullptr;
+    for (IWidget* widget : m_widgetList)
+    {
+        delete widget;
+        widget = nullptr;
+    }
+    
+    delete m_fontRenderer;
+    m_fontRenderer = nullptr;
 }
 
 
@@ -164,7 +172,18 @@ void OpenGLWindow::draw()
     glUniform4f(colorLoc, 0.f, 0.f, 1.f, 1.f);
     glBindVertexArray(m_vao);
     glDrawArrays(GL_TRIANGLES, 0, 3);
-    m_toolbar->draw();
+
+    for (IWidget* widget : m_widgetList)
+    {
+        widget->draw();
+    }
+    glBindVertexArray(0);
+    m_fontRenderer->renderText("Hello World", 40.f, 40.f, 1.5f, Color(1.f, 1.f, 1.f));
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR)
+        std::cerr << "OpenGL Error: " << err << "\n";
+
+
     glXSwapBuffers(m_dispaly, m_win);
 
 }
@@ -185,11 +204,37 @@ void OpenGLWindow::start()
 
                 glViewport(0, 0, newWidht, newHeight);
 
+                for (IWidget* widget : m_widgetList)
+                {
+                    widget->resize(newHeight, newWidht);
+                }
+
+                m_fontRenderer->resize(newWidht, newHeight);
+
                 std::cout << "Fenstergroesse geaendert: " << newWidht << "x" << newHeight << std::endl;
             }
         }
 
+        int x, y;
+        Window root_return, child_return;
+        int root_x, root_y;
+        unsigned int mask_return;
+
+        XQueryPointer(
+            m_dispaly,
+            m_win,
+            &root_return,
+            &child_return, 
+            &root_x, &root_y,
+            &x, &y,
+            &mask_return // mouse status (pressed mouse button)
+        );
         draw();
         usleep(16000);
     }
+}
+
+void OpenGLWindow::addWidget(IWidget* widget)
+{
+    m_widgetList.push_back(widget);
 }
