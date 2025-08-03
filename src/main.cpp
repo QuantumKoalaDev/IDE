@@ -2,6 +2,7 @@
 
 #include "UI/Window/OpenGLWindow.h"
 #include "UI/Toolbar/Toolbar.h"
+#include "UI/Textbox/Textbox.h"
 #include "UI/Renderer/FontRenderer/FontRenderer.h"
 
 #define WINDOW_WIDTH 640
@@ -18,6 +19,17 @@ int main()
     }
 
     window.addWidget(new Toolbar(WINDOW_WIDTH, WINDOW_HEIGHT, window.getProgramm()));
+    window.addWidget(new Textbox(window.getFontRenderer(), WINDOW_WIDTH, WINDOW_HEIGHT, 20.f, R"(#pragma once
+
+struct Color
+{
+    Color(float red, float green, float blue) : r(red), g(green), b(blue) {};
+    float r;
+    float g;
+    float b;
+};
+)"
+    ));
 
     window.start();
 

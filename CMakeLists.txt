@@ -35,6 +35,8 @@ add_library(IDEUI STATIC
     src/UI/Toolbar/Toolbar.h
     src/UI/Renderer/FontRenderer/FontRenderer.cpp
     src/UI/Renderer/FontRenderer/FontRenderer.h
+    src/UI/Textbox/Textbox.cpp
+    src/UI/Textbox/Textbox.h
 )
 find_package(Freetype REQUIRED)
 target_include_directories(IDEUI PUBLIC ${FREETYPE_INCLUDE_DIRS})

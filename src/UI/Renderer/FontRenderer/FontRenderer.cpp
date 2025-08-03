@@ -29,6 +29,8 @@ static const char* fragmentShaderSource = R"(
 
 FontRenderer::FontRenderer(const char* fontPath, int fontSize)
 {
+    m_fontSize = fontSize;
+    
     m_shader = createShaderProgram();
 
     // FreeType init    
@@ -80,11 +82,6 @@ FontRenderer::FontRenderer(const char* fontPath, int fontSize)
             continue;
         }
 
-        std::cout << "DEBUG: Glyph width: " << face->glyph->bitmap.width
-                  << "; height: " << face->glyph->bitmap.rows
-                  << "; buffer pointer: " << static_cast<const void*>(face->glyph->bitmap.buffer)
-                  << "\n";
-
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -98,10 +95,7 @@ FontRenderer::FontRenderer(const char* fontPath, int fontSize)
         };
 
         m_characters.insert(std::pair<char, Character>(c, character));
-        std::cout << "Finished loading " << c << "\n";
     }
-    std::cout << "finish loading characters\n";
-
 
     FT_Done_Face(face);
     FT_Done_FreeType(ft);

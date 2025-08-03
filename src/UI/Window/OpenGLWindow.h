@@ -30,6 +30,7 @@ class OpenGLWindow
 
         // gets replaced later
         GLuint getProgramm() { return m_program; }
+        FontRenderer* getFontRenderer() { return m_fontRenderer; }
         
         private:
         Display* m_dispaly = nullptr;

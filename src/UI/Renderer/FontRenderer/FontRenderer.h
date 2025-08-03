@@ -20,12 +20,16 @@ class FontRenderer
         void renderText(const std::string& text, float x, float y, float scale, const Color& color);
         void resize(float windowWith, float windowHeight);
 
+        float getFontSize() { return m_fontSize; }
+
 
     private:
         std::map<char, Character> m_characters;
         GLuint m_vao;
         GLuint m_vbo;
         GLuint m_shader;
+
+        float m_fontSize;
 
         GLuint compileShader(const char* source, GLenum type);
         GLuint createShaderProgram();

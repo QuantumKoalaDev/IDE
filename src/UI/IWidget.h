@@ -9,6 +9,8 @@ class IWidget
         virtual void onHover(int cursorX, int cursorY) = 0;
         virtual void onClick() = 0;
         virtual void resize(int windowHeight, int windowWidth) = 0;
+        virtual void setFocus(bool focus) = 0;
+        virtual bool isFocused() = 0;
 
 
         // Position in OpenGL coordinates

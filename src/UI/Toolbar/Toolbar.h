@@ -11,7 +11,9 @@ class Toolbar : public IWidget
 
         void draw() override;
         void onHover(int cursorX, int cursorY) override;
-        void onClick() override {};
+        void onClick() override { /*TODO*/ }
+        void setFocus(bool focus) override { /*TODO*/ }
+        bool isFocused() override { return m_focused; /*TODO*/ }
         void resize(int windowHeight, int windowWidth) override;
     
     private:
@@ -20,4 +22,5 @@ class Toolbar : public IWidget
         GLuint m_program;
 
         bool hovered = false;
+        bool m_focused = false;
 };
