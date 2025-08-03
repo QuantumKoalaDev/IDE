@@ -35,7 +35,7 @@ The goal is to build an IDE optimized specifically for C++, combining:
 ## Dependencies
 
 - On Windows, you may need to include `glew.h` in your source code.  
-  The GLEW license is provided in the `external/GLEW` directory next to the header file.
+  The GLEW license is provided in the `external/glew-2.2.0` directory.
 
 ## Build
 
@@ -47,5 +47,5 @@ The goal is to build an IDE optimized specifically for C++, combining:
 
 ## Licenses
 
-- **GLEW**: License file is located in `src/external/GLEW` alongside the header file.
+- **GLEW**: License file is located in `src/external/glew-2.2.0`.
 
