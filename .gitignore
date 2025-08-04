@@ -21,3 +21,6 @@ glew.pc
 tmp/
 bin/
 lib/
+
+
+!external/glew-2.2.0/build/
