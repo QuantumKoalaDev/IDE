@@ -34,3 +34,8 @@ This project includes third-party software under their respective licenses:
 ### GLEW (The OpenGL Extension Wrangler Library)
 - Source: http://glew.sourceforge.net/
 - License text: See `external/glew-2.0.2/LICENSE.txt`
+
+### FreeType
+- Source: https://freetype.org
+- License: See `external/freetype/docs/FTL.txt`
+- Portions of this software are copyright © 2006–2025 The FreeType Project. All rights reserved.
