@@ -7,9 +7,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Precompiled Header helper
 # include(cmake/PCH.cmake)
 
-# External libs
-# add_subdirectory(external/imgui)
-
 # Core lib
 # add_library(IDECore STATIC
 #     src/Core/... cpp
@@ -27,6 +24,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # target_include_directories(MyAppBackend PUBLIC include)
 # enable_pch(MyAppBackend src/Backend/pch.hpp)
 
+
+# External libraries
+add_subdirectory(external/freetype EXCLUDE_FROM_ALL)
+
+# GLEW manually integrated
+set(GLEW_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/external/glew-2.2.0/include")
+
 # UI
 add_library(IDEUI STATIC
     src/UI/Window/OpenGLWindow.cpp
@@ -38,12 +42,25 @@ add_library(IDEUI STATIC
     src/UI/Textbox/Textbox.cpp
     src/UI/Textbox/Textbox.h
 )
-find_package(Freetype REQUIRED)
-target_include_directories(IDEUI PUBLIC ${FREETYPE_INCLUDE_DIRS})
-target_link_libraries(IDEUI PUBLIC GL GLEW X11 ${FREETYPE_LIBRARIES})
-# target_link_libraries(MyAppUI PUBLIC MyAppCore imgui)
-# target_include_directories(MyAppUI PUBLIC include)
-# enable_pch(MyAppUI src/UI/pch.hpp)
+
+target_include_directories(IDEUI PUBLIC "${GLEW_INCLUDE_DIR}")
+
+# Static Lib !Important: just works after seperate glew build -> execute 'make' in glew external/glew-2.2.0!
+if(WIN32)
+    target_compile_definitions(IDEUI PUBLIC GLEW_STATIC)
+    set(GLEW_LIBRARY "${CMAKE_SOURCE_DIR}/external/glew-2.2.0/lib/Release/x64/glew32s.lib")
+else()
+    set(GLEW_LIBRARY "${CMAKE_SOURCE_DIR}/external/glew-2.2.0"/lib/libGLEW.a)
+endif()
+
+# Platform specific OpenGL and windowing dependencies
+if(WIN32)
+    target_link_libraries(IDEUI PUBLIC opengl32 freetype ${GLEW_LIBRARY})
+else()
+    find_package(X11 REQUIRED)
+    target_link_libraries(IDEUI PUBLIC GL freetype ${GLEW_LIBRARY} ${X11_LIBRARIES})
+    target_include_directories(IDEUI PUBLIC ${X11_INCLUDE_DIR})
+endif()
 
 # Main executable
 add_executable(IDE.out src/main.cpp)

@@ -44,11 +44,13 @@ The goal is to build an IDE optimized specifically for C++, combining:
 
 ## Build
 
-- **Linux** (tested on Ubuntu):  
-  Run `./build.sh` in the root directory
+- **Linux** (tested on Ubuntu):
+  First, build the GLEW library separately inside `external/glew-2.2.0` by running: `make`.  
+  Afterwards, run `./build.sh` in the root directory.
 
 - **Windows**:  
-  Currently in development
+  Open the Visual Studio solution at `external/glew-2.2.0/build/vc15/glew.sln` and build the project in Release mode.  
+  Then, run `./build.bat` in the root directory.
 
 ## Licenses
 
