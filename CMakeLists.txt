@@ -51,6 +51,11 @@ if(WIN32)
     set(GLEW_LIBRARY "${CMAKE_SOURCE_DIR}/external/glew-2.2.0/lib/Release/x64/glew32s.lib")
 else()
     set(GLEW_LIBRARY "${CMAKE_SOURCE_DIR}/external/glew-2.2.0"/lib/libGLEW.a)
+    add_library(GLEW STATIC IMPORTED GLOBAL)
+    set_target_properties(GLEW PROPERTIES
+        IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/external/glew-2.2.0/lib/libGLEW.a"
+        INTERFACE_INCLUDE_DIRECTORIES "${GLEW_INCLUDE_DIR}"
+    )
 endif()
 
 # Platform specific OpenGL and windowing dependencies
@@ -58,7 +63,7 @@ if(WIN32)
     target_link_libraries(IDEUI PUBLIC opengl32 freetype ${GLEW_LIBRARY})
 else()
     find_package(X11 REQUIRED)
-    target_link_libraries(IDEUI PUBLIC GL freetype ${GLEW_LIBRARY} ${X11_LIBRARIES})
+    target_link_libraries(IDEUI PUBLIC GL freetype GLEW ${X11_LIBRARIES})
     target_include_directories(IDEUI PUBLIC ${X11_INCLUDE_DIR})
 endif()
 
