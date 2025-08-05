@@ -96,6 +96,7 @@ FontRenderer::FontRenderer(const char* fontPath, int fontSize)
 
         m_characters.insert(std::pair<char, Character>(c, character));
     }
+    std::cout << "Finished loading chars" << std::endl;
 
     FT_Done_Face(face);
     FT_Done_FreeType(ft);

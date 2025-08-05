@@ -36,9 +36,3 @@ struct Color
     window.deleteWindow();
     return 0;
 }
-
-
-// ✅ Verwendung
-
-// FontRenderer* font = new FontRenderer("fonts/Roboto-Regular.ttf", 24);
-// font->renderText("Hallo Welt", 20.0f, 440.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));

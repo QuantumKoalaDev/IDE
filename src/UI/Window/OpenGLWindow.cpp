@@ -5,7 +5,7 @@
 #include <iostream>
 #include <filesystem>
 
-
+#ifdef __linux__
 static int visualAttribs[] =
 {
     GLX_X_RENDERABLE,   True,
@@ -30,6 +30,27 @@ static int context_attribs[] =
     GLX_CONTEXT_PROFILE_MASK_ARB,   GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
     None
 };
+#endif
+
+#ifdef _WIN32
+static PIXELFORMATDESCRIPTOR pfd =
+{
+    sizeof(pfd), 1,
+    PFD_DRAW_TO_WINDOW | LPD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+    PFD_TYPE_RGBA, 32,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,
+    24, 8, 0,
+    PFD_MAIN_PLANE, 0, 0, 0, 0
+};
+
+static int context_attribs[] =
+{
+    WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+    WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+    WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
+    0
+};
+#endif
 
 static float vertices[] =
 {
@@ -73,7 +94,21 @@ GLuint OpenGLWindow::createShader(GLenum type, const char* source)
     return shader;
 }
 
-bool OpenGLWindow::createWindow(char* title, int height, int width)
+#ifdef _WIN32
+LRESULT CALLBACK DefWinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    switch (uMsg)
+    {
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        return 0;
+    default:
+        return DefWindowProc(hWnd, uMsg, wParam, lParam);
+    }
+}
+#endif
+
+bool OpenGLWindow::createWindow(const char* title, int height, int width)
 {
     #ifdef __linux__
     m_dispaly = XOpenDisplay(nullptr);
@@ -113,6 +148,32 @@ bool OpenGLWindow::createWindow(char* title, int height, int width)
     #endif
 
     #ifdef _WIN32
+    WNDCLASS wc = {};
+    wc.style = CS_OWNDC;
+    wc.lpfnWndProc = DefWinProc;
+    wc.hInstance = GetModuleHandle(nullptr);
+    wc.lpszClassName = "DummyGL";
+
+    if (!RegisterClass(&wc))
+    {
+        std::cerr << "Failed to register window class\n";
+        return false;
+    }
+
+    m_hwnd = CreateWindowEx(
+        0, wc.lpszClassName, title, WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT, CW_USEDEFAULT, width, height, 
+        nullptr, nullptr, wc.hInstance, nullptr
+    );
+
+    m_hdc = GetDC(m_hwnd);
+
+    int pf = ChoosePixelFormat(m_hdc, &pfd);
+    SetPixelFormat(m_hdc, pf, &pfd);
+
+    HGLRC tempContext = wglCreateContext(m_hdc);
+    wglMakeCurrent(m_hdc, tempContext);
+
     glewExperimental = GL_TRUE;
     #endif
     
@@ -121,6 +182,27 @@ bool OpenGLWindow::createWindow(char* title, int height, int width)
         std::cerr << "GLEW could not be initialized\n";
         return false;
     }
+
+    #ifdef _WIN32
+    if (!wglCreateContextAttribsARB)
+    {
+        wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)
+            wglGetProcAddress("wglCreateCOntextAttribsARB");
+
+        if (!wglCreateContextAttribsARB)
+        {
+            std::cerr << "wglCreateContextAttribsARB not supported\n";
+            return false;
+        }
+    }
+
+    m_hglrc = wglCreateContextAttribsARB(m_hdc, 0, context_attribs);
+    wglMakeCurrent(nullptr, nullptr);
+    wglDeleteContext(tempContext);
+    wglMakeCurrent(m_hdc, m_hglrc);
+
+    ShowWindow(m_hwnd, SW_SHOW);
+    #endif
 
     // Shader and Pipeline
     m_vert = createShader(GL_VERTEX_SHADER, vertexShaderSource);
@@ -139,8 +221,8 @@ bool OpenGLWindow::createWindow(char* title, int height, int width)
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
     glEnableVertexAttribArray(0);
 
-    std::filesystem::path currentPath = std::filesystem::current_path().append("src/UI/Fonts/Ubuntu-Regular.ttf");
-    m_fontRenderer = new FontRenderer(currentPath.c_str(), 20.f);
+    std::filesystem::path currentPath = std::filesystem::current_path().append("resources/Fonts/Ubuntu-Regular.ttf");
+    m_fontRenderer = new FontRenderer(currentPath.string().c_str(), 20);
     m_widgetList.push_back(new Toolbar(640, 480, m_program));
 
     return true;
@@ -157,6 +239,13 @@ void OpenGLWindow::deleteWindow()
     glXDestroyContext(m_dispaly, m_context);
     XDestroyWindow(m_dispaly, m_win);
     XCloseDisplay(m_dispaly);
+    #endif
+
+    #ifdef _WIN32
+    wglMakeCurrent(nullptr, nullptr);
+    wglDeleteContext(m_hglrc);
+    ReleaseDC(m_hwnd, m_hdc);
+    DestroyWindow(m_hwnd);
     #endif
 
     for (IWidget* widget : m_widgetList)
@@ -187,12 +276,18 @@ void OpenGLWindow::draw()
     }
     glBindVertexArray(0);
 
+    #ifdef __linux__
     glXSwapBuffers(m_dispaly, m_win);
+    #endif
 
+    #ifdef _WIN32
+    SwapBuffers(m_hdc);
+    #endif
 }
 
 void OpenGLWindow::start()
 {
+#ifdef __linux__
     while (m_running)
     {
         while (XPending(m_dispaly))
@@ -252,6 +347,23 @@ void OpenGLWindow::start()
         draw();
         usleep(16000);
     }
+#endif
+
+#ifdef _WIN32
+    MSG msg;
+    while (m_running)
+    {
+        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        {
+            if (msg.message == WM_QUIT) break;
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+
+        draw();
+        Sleep(16);
+    }
+#endif
 }
 
 void OpenGLWindow::addWidget(IWidget* widget)
