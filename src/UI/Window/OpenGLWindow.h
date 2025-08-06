@@ -50,7 +50,6 @@ class OpenGLWindow
         HWND m_hwnd;
         HDC m_hdc;
         HGLRC m_hglrc;
-
         #endif
         
         GLuint m_program;

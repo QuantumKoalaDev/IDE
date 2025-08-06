@@ -30,7 +30,7 @@ static const char* fragmentShaderSource = R"(
 FontRenderer::FontRenderer(const char* fontPath, int fontSize)
 {
     m_fontSize = fontSize;
-    
+
     m_shader = createShaderProgram();
 
     // FreeType init    
@@ -51,8 +51,6 @@ FontRenderer::FontRenderer(const char* fontPath, int fontSize)
     FT_Set_Pixel_Sizes(face, 0, fontSize);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // disable byte-alignment restriciton
-
-    std::cout << "Initializing renderer before loading chars\n";
 
     for (unsigned char c = 0; c < 128; c++)
     {
@@ -96,7 +94,6 @@ FontRenderer::FontRenderer(const char* fontPath, int fontSize)
 
         m_characters.insert(std::pair<char, Character>(c, character));
     }
-    std::cout << "Finished loading chars" << std::endl;
 
     FT_Done_Face(face);
     FT_Done_FreeType(ft);
@@ -122,18 +119,40 @@ FontRenderer::~FontRenderer()
 
 void FontRenderer::renderText(const std::string& text, float x, float y, float scale, const Color& color)
 {
+    setOrthoProjection(0.f, 640.f, 0.f, 480.f);
+
+    GLint loc = glGetUniformLocation(m_shader, "textColor");
+    if (loc == -1)
+        std::cerr << "Uniform 'textColor' not found!" << std::endl;
+
+    GLint loc1 = glGetUniformLocation(m_shader, "projection");
+    if (loc1 == -1) {
+        std::cerr << "Uniform 'projection' not found or not set!" << std::endl;
+    }
+
+
     glUseProgram(m_shader);
+
+    GLint currentProgram = 0;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
+    if (currentProgram != m_shader) {
+        std::cerr << "Warning: Shader program not set correctly!" << std::endl;
+    }
+
+
     glUniform3f(glGetUniformLocation(m_shader, "textColor"), color.r, color.g, color.b);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_DEPTH_TEST);
+    glDisable(GL_FRAMEBUFFER_SRGB);
+
     glUniform1i(glGetUniformLocation(m_shader, "text"), 0);
 
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(m_vao);
 
-    for (char c: text)
+    for (char c : text)
     {
         Character ch = m_characters[c];
 
@@ -143,21 +162,26 @@ void FontRenderer::renderText(const std::string& text, float x, float y, float s
         float w = ch.Size.x * scale;
         float h = ch.Size.y * scale;
 
-        float vertices[6][4] = 
+        float vertices[6][4] =
         {
              { xpos,    ypos + h,   0.f,    0.f},
              { xpos,    ypos,       0.f,    1.f},
              { xpos + w, ypos,      1.f,    1.f},
 
              { xpos,    ypos + h,   0.f,    0.f },
-             { xpos +w, ypos,       1.f,    1.f },
-             { xpos +w, ypos + h,   1.f,    0.f}
+             { xpos + w, ypos,       1.f,    1.f },
+             { xpos + w, ypos + h,   1.f,    0.f}
         };
 
         glBindTexture(GL_TEXTURE_2D, ch.TextureID);
 
         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+
+        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (status != GL_FRAMEBUFFER_COMPLETE)
+            std::cerr << "Framebuffer not complete: " << std::hex << status << std::endl;
+
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -180,8 +204,8 @@ GLuint FontRenderer::compileShader(const char* src, GLenum type)
     {
         char info[512];
         glGetShaderInfoLog(shader, 512, nullptr, info);
-        
-        std::cerr << "Shader Error: " << info << std::endl; 
+
+        std::cerr << "Shader Error: " << info << std::endl;
     }
 
     return shader;
@@ -195,9 +219,18 @@ GLuint FontRenderer::createShaderProgram()
     glAttachShader(prog, vs);
     glAttachShader(prog, fs);
     glLinkProgram(prog);
+
+    GLint success;
+    glGetProgramiv(prog, GL_LINK_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetProgramInfoLog(prog, 512, NULL, infoLog);
+        std::cerr << "Shader Program Link Error: " << infoLog << std::endl;
+    }
+
     glDeleteShader(vs);
     glDeleteShader(fs);
-    
+
     return prog;
 }
 
@@ -208,16 +241,22 @@ void FontRenderer::setOrthoProjection(float left, float right, float bottom, flo
         2.0f / (right - left),      0.f,        0.f,    0.f,
         0.f,        2.f / (top - bottom),       0.f,    0.f,
         0.f,        0.f,                       -1.f,    0.f,
-        -(right + left) / (right -left), -(top + bottom) / (top -bottom), 0.f, 1.f
+        -(right + left) / (right - left), -(top + bottom) / (top - bottom), 0.f, 1.f
     };
 
     glUseProgram(m_shader);
+    GLint currentProgram = 0;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
+    if (currentProgram != m_shader) {
+        std::cerr << "Warning: Shader program not set correctly!" << std::endl;
+    }
+
+
     GLint loc = glGetUniformLocation(m_shader, "projection");
     glUniformMatrix4fv(loc, 1, GL_FALSE, projection);
 }
 
 void FontRenderer::resize(float windowWidth, float windowHeight)
 {
-    std::cout << "Resize renderer: " << windowWidth << "x" << windowHeight << "\n"; 
     setOrthoProjection(0.f, windowWidth, 0.f, windowHeight);
 }

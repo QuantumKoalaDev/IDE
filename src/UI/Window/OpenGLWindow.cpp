@@ -36,7 +36,7 @@ static int context_attribs[] =
 static PIXELFORMATDESCRIPTOR pfd =
 {
     sizeof(pfd), 1,
-    PFD_DRAW_TO_WINDOW | LPD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+    PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
     PFD_TYPE_RGBA, 32,
     0,0,0,0,0,0,0,0,0,0,0,0,0,
     24, 8, 0,
@@ -47,7 +47,7 @@ static int context_attribs[] =
 {
     WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
     WGL_CONTEXT_MINOR_VERSION_ARB, 3,
-    WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
+    WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
     0
 };
 #endif
@@ -174,7 +174,25 @@ bool OpenGLWindow::createWindow(const char* title, int height, int width)
     HGLRC tempContext = wglCreateContext(m_hdc);
     wglMakeCurrent(m_hdc, tempContext);
 
-    glewExperimental = GL_TRUE;
+    PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB =
+        (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
+
+    if (!wglCreateContextAttribsARB)
+    {
+        std::cerr << "wglCreateContextAttribsARB not supported\n";
+        return false;
+    }
+
+    m_hglrc = wglCreateContextAttribsARB(m_hdc, 0, context_attribs);
+
+    wglMakeCurrent(nullptr, nullptr);
+    wglDeleteContext(tempContext);
+    wglMakeCurrent(m_hdc, m_hglrc);
+
+    const GLubyte* version = glGetString(GL_VERSION);
+    const GLubyte* renderer = glGetString(GL_RENDERER);
+
+    //glewExperimental = GL_TRUE;
     #endif
     
     if (glewInit() != GLEW_OK)
@@ -184,22 +202,6 @@ bool OpenGLWindow::createWindow(const char* title, int height, int width)
     }
 
     #ifdef _WIN32
-    if (!wglCreateContextAttribsARB)
-    {
-        wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)
-            wglGetProcAddress("wglCreateCOntextAttribsARB");
-
-        if (!wglCreateContextAttribsARB)
-        {
-            std::cerr << "wglCreateContextAttribsARB not supported\n";
-            return false;
-        }
-    }
-
-    m_hglrc = wglCreateContextAttribsARB(m_hdc, 0, context_attribs);
-    wglMakeCurrent(nullptr, nullptr);
-    wglDeleteContext(tempContext);
-    wglMakeCurrent(m_hdc, m_hglrc);
 
     ShowWindow(m_hwnd, SW_SHOW);
     #endif
