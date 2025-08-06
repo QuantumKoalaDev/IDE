@@ -69,6 +69,14 @@ endif()
 
 # Main executable
 add_executable(IDE.out src/main.cpp)
+
+if(WIN32)
+    set_target_properties(IDE.out PROPERTIES
+        VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    )
+    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT IDE.out)
+endif()
+
 target_link_libraries(IDE.out PRIVATE IDEUI)
 # target_link_libraries(MyApp PRIVATE MyAppCore MyAppBackend MyAppUI)
 
