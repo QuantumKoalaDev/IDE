@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../IWidget.h"
+#include "../Interfaces/IWidget.h"
 #include "../Renderer/FontRenderer/FontRenderer.h"
 
 

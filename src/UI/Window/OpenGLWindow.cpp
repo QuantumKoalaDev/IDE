@@ -1,6 +1,8 @@
 #include "OpenGLWindow.h"
 
 #include "../Textbox/Textbox.h"
+#include "../EventSystem/ResizeEvent.h"
+#include "../EventSystem/EventManager.h"
 
 #include <iostream>
 #include <filesystem>
@@ -95,13 +97,46 @@ GLuint OpenGLWindow::createShader(GLenum type, const char* source)
 }
 
 #ifdef _WIN32
-LRESULT CALLBACK DefWinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK OpenGLWindow::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    switch (uMsg)
+    OpenGLWindow* myHwnd = reinterpret_cast<OpenGLWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+
+    //if (!myHwnd)
+    //{
+    //    std::cerr << "Window handle was not set correctly, can't handle input..." << std::endl;
+    //    return 0;
+    //}
+
+    if (uMsg == WM_CLOSE)
     {
-    case WM_DESTROY:
         PostQuitMessage(0);
         return 0;
+    }
+
+    switch (uMsg)
+    {
+    case WM_SIZE:
+    {
+        int width = LOWORD(lParam);
+        int height = HIWORD(lParam);
+
+        ComponentManager& cpMg = myHwnd->getComponentManager();
+        EventManager& evMg = cpMg.getEventManager();
+        
+        ResizeEvent* resEv = new ResizeEvent(width, height);
+
+        evMg.addEvents(resEv);
+        break;
+    }
+    case WM_KEYDOWN:
+    {
+        char key = static_cast<char>(wParam);
+        std::cout << "Key pressed: " << key << std::endl;
+        break;
+    }
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        break;
     default:
         return DefWindowProc(hWnd, uMsg, wParam, lParam);
     }
@@ -150,7 +185,7 @@ bool OpenGLWindow::createWindow(const char* title, int height, int width)
     #ifdef _WIN32
     WNDCLASS wc = {};
     wc.style = CS_OWNDC;
-    wc.lpfnWndProc = DefWinProc;
+    wc.lpfnWndProc = WndProc;
     wc.hInstance = GetModuleHandle(nullptr);
     wc.lpszClassName = "DummyGL";
 
@@ -165,6 +200,14 @@ bool OpenGLWindow::createWindow(const char* title, int height, int width)
         CW_USEDEFAULT, CW_USEDEFAULT, width, height, 
         nullptr, nullptr, wc.hInstance, nullptr
     );
+
+    if (!m_hwnd)
+    {
+        std::cerr << "Window could not be created" << std::endl;
+        return false;
+    }
+
+    SetWindowLongPtr(m_hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
     m_hdc = GetDC(m_hwnd);
 
@@ -191,8 +234,6 @@ bool OpenGLWindow::createWindow(const char* title, int height, int width)
 
     const GLubyte* version = glGetString(GL_VERSION);
     const GLubyte* renderer = glGetString(GL_RENDERER);
-
-    //glewExperimental = GL_TRUE;
     #endif
     
     if (glewInit() != GLEW_OK)
@@ -202,7 +243,6 @@ bool OpenGLWindow::createWindow(const char* title, int height, int width)
     }
 
     #ifdef _WIN32
-
     ShowWindow(m_hwnd, SW_SHOW);
     #endif
 
@@ -272,10 +312,8 @@ void OpenGLWindow::draw()
     glBindVertexArray(m_vao);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
-    for (IWidget* widget : m_widgetList)
-    {
-        widget->draw();
-    }
+
+    m_componentManager.render();
     glBindVertexArray(0);
 
     #ifdef __linux__
@@ -361,7 +399,8 @@ void OpenGLWindow::start()
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
-
+        EventManager& evMg = m_componentManager.getEventManager();
+        evMg.dispatchEvents();
         draw();
         Sleep(16);
     }
@@ -370,5 +409,27 @@ void OpenGLWindow::start()
 
 void OpenGLWindow::addWidget(IWidget* widget)
 {
-    m_widgetList.push_back(widget);
+    m_componentManager.addComponent(widget);
+    //m_widgetList.push_back(widget);
+}
+
+ComponentManager& OpenGLWindow::getComponentManager()
+{
+    return m_componentManager;
+}
+
+void OpenGLWindow::onEvent(Event& event)
+{
+    if (event.getEventType() != EventType::Resize) return;
+
+    ResizeEvent& resEv = dynamic_cast<ResizeEvent&>(event);
+
+    glViewport(0, 0, resEv.getWidth(), resEv.getHeight());
+    m_fontRenderer->resize(resEv.getWidth(), resEv.getHeight());
+}
+
+void OpenGLWindow::resgisterToResize()
+{
+    EventManager& evMg = m_componentManager.getEventManager();
+    evMg.registerListener(this, EventType::Resize);
 }

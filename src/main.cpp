@@ -17,6 +17,7 @@ int main()
         std::cerr << "Window could not be initialized\n";
         return 0;
     }
+    window.resgisterToResize();
 
     window.addWidget(new Toolbar(WINDOW_WIDTH, WINDOW_HEIGHT, window.getProgramm()));
     window.addWidget(new Textbox(window.getFontRenderer(), WINDOW_WIDTH, WINDOW_HEIGHT, 20.f, R"(#pragma once

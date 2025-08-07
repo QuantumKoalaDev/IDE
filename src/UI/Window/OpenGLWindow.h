@@ -17,15 +17,15 @@
 
 #include <vector>
 
+#include "../ComponentManager.h"
 #include "../Renderer/FontRenderer/FontRenderer.h"
 #include "../Toolbar/Toolbar.h"
+#include "../Interfaces/IInputListener.h"
 
 
 class IWidget;
-/*
-        
-*/
-class OpenGLWindow
+
+class OpenGLWindow : public IInputListener
 {
     public:
         bool createWindow(const char* title, int height, int width);
@@ -35,9 +35,23 @@ class OpenGLWindow
 
         void addWidget(IWidget* widget);
 
+        // just for testing
+        /*void setViewPort(int newWidht, int newHeight) { 
+            glViewport(0, 0, newWidht, newHeight);
+            for (IWidget* widget : m_widgetList)
+            {
+                widget->resize(newHeight, newWidht);
+            }
+        };*/
+
         // gets replaced later
         GLuint getProgramm() const { return m_program; }
         FontRenderer* getFontRenderer() { return m_fontRenderer; }
+        ComponentManager& getComponentManager();
+
+        void onEvent(Event& event) override;
+
+        void resgisterToResize();
         
         private:
         #ifdef __linux__
@@ -60,10 +74,14 @@ class OpenGLWindow
 
         bool m_running = true;
         
+        ComponentManager m_componentManager;
         FontRenderer* m_fontRenderer = nullptr;
         std::vector<IWidget*> m_widgetList;
         
-        
+        #ifdef _WIN32
+        static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+        #endif
+
         GLuint createShader(GLenum type, const char* source);
         void draw();
 };

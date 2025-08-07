@@ -1,7 +1,7 @@
 #pragma once
 #include <GL/glew.h>
 
-#include "../IWidget.h"
+#include "../Interfaces/IWidget.h"
 
 class Toolbar : public IWidget
 {
