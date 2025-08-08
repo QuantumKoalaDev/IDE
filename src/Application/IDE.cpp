@@ -27,21 +27,7 @@ void IDE::start()
     }
 
     win.start();
-
-    // char input;
-
-    // while (m_running)
-    // {
-    //     std::cin >> input;
-
-    //     if (input == 'q')
-    //     {
-    //         std::cout << "Pushed!" << std::endl;
-    //         m_uiToCore.push(Event(EventType::Quit));
-    //         break;
-    //     }
-    // }
-
+    win.deleteWindow();
     std::cout << "Hello User!" << std::endl;
 
     coreThread.join();
