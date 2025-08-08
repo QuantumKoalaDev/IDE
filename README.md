@@ -55,6 +55,6 @@ The goal is to build an IDE optimized specifically for C++, combining:
 ## Licenses
 
 - **GLEW**: License file is located in `external/glew-2.2.0`.
-- **FreeType**: License file is located in `external/freetype/docs/FTL.txt`.
+- **FreeType**: License file is located in `external/freetype/docs/FTL.txt`. This library is included as a git submodule.
 
 For details on the software license and third-party components, see [LICENSE.txt](./LICENSE.txt).
