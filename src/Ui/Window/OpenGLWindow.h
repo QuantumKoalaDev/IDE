@@ -53,7 +53,13 @@ class OpenGLWindow
         #ifdef __linux__
         Display* m_dispaly = nullptr;
         Window m_win;
+        Atom m_wmDeleteMessage;
         GLXContext m_context;
+
+
+        static std::atomic<bool>* s_runningPtr;
+
+        static int myIOErrorHandler(Display* display);
         #endif
 
         #ifdef _WIN32

@@ -4,5 +4,6 @@ enum EventType
 {
     Keyboard,
     Mouse,
-    Quit
+    Quit,
+    None
 };

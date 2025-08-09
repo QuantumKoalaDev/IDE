@@ -8,12 +8,14 @@
 
 #include "EventSystem/ThreadSafeQueue/ThreadSafeQueue.h"
 #include "EventSystem/Events/Event.h"
+#include <Core/EventSystem/EventManager/EventManager.h>
+#include <Core/EventSystem/IEventListener.h>
 
-class Core
+class Core : public IEventListener
 {
-    ThreadSafeQueue<Event>& m_inQueue;
-    ThreadSafeQueue<Event>& m_outQueue;
     std::atomic<bool>& m_running;
+
+    EventManager m_eventManager;    
 
     public:
     Core(
@@ -21,7 +23,9 @@ class Core
         ThreadSafeQueue<Event>& out,
         std::atomic<bool>& run
     );
-    ~Core() {}
+    ~Core();
 
     void run();
+
+    void onEvent(EventType type) override;
 };

@@ -5,6 +5,8 @@
 #include <filesystem>
 
 #ifdef __linux__
+std::atomic<bool>* OpenGLWindow::s_runningPtr = nullptr;
+
 static int visualAttribs[] =
 {
     GLX_X_RENDERABLE,   True,
@@ -156,6 +158,9 @@ bool OpenGLWindow::createWindow(const char* title, int height, int width)
         return false;
     }
 
+    s_runningPtr = &m_running;
+    XSetIOErrorHandler(myIOErrorHandler);
+
     int fbcount;
     GLXFBConfig* fbc = glXChooseFBConfig(m_dispaly, DefaultScreen(m_dispaly), visualAttribs, &fbcount);
     if (!fbc)
@@ -173,6 +178,10 @@ bool OpenGLWindow::createWindow(const char* title, int height, int width)
         0, 0, width, height, 0, vi->depth, InputOutput,
         vi->visual, CWColormap | CWEventMask, &swa
     );
+
+    Atom wmDeleteMessage = XInternAtom(m_dispaly, "WM_DELETE_WINDOW", False);
+    XSetWMProtocols(m_dispaly, m_win, &wmDeleteMessage, 1);
+    m_wmDeleteMessage = wmDeleteMessage;
 
     XStoreName(m_dispaly, m_win, title);
     XMapWindow(m_dispaly, m_win);
@@ -359,11 +368,11 @@ void OpenGLWindow::start()
 
                 std::cout << "Taste gedrückt: " << XKeysymToString(keySym) << std::endl;
 
-                if (keySym == XK_q)
-                {
-                    m_uiToCore.push(Event(EventType::Quit));
-                    m_running = false;
-                }
+                // if (keySym == XK_q)
+                // {
+                //     m_uiToCore.push(Event(EventType::Quit));
+                //     // m_running = false;
+                // }
 
                 // for (IWidget* widget : m_widgetList)
                 // {
@@ -373,6 +382,14 @@ void OpenGLWindow::start()
                 //         textbox->write(XKeysymToString(keySym));
                 //     }
                 // }
+            }
+
+            if (ev.type == ClientMessage)
+            {
+                if ((Atom)ev.xclient.data.l[0] == m_wmDeleteMessage)
+                {
+                    m_uiToCore.push(Event(EventType::Quit));
+                }
             }
         }
 
@@ -418,3 +435,12 @@ void OpenGLWindow::start()
 //     m_componentManager.addComponent(widget);
 //     //m_widgetList.push_back(widget);
 // }
+
+#ifdef __linux__
+int OpenGLWindow::myIOErrorHandler(Display* display)
+{
+    if (s_runningPtr) s_runningPtr->store(false, std::memory_order_relaxed);
+
+    return -1;
+}
+#endif
