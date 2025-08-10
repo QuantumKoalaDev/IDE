@@ -1,5 +1,6 @@
 #include "OpenGLWindow.h"
 
+#include <Core/EventSystem/Events/Event.h>
 #include <Core/EventSystem/EventManager/EventManager.h>
 #include <Core/ServiceManagement/ServiceManager.h>
 
@@ -122,7 +123,7 @@ LRESULT CALLBACK OpenGLWindow::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
 
     if (uMsg == WM_CLOSE)
     {
-        evMg.pushEvent(std::make_unique<Event>(EventType::Quit));
+        evMg.pushEvent(std::make_shared<Event>(EventType::Quit), false);
         PostQuitMessage(0);
         return 0;
     }
@@ -149,7 +150,7 @@ LRESULT CALLBACK OpenGLWindow::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
         break;
     }
     case WM_DESTROY:
-        evMg.pushEvent(std::make_unique<Event>(EventType::Quit));
+        evMg.pushEvent(std::make_shared<Event>(EventType::Quit), false);
         PostQuitMessage(0);
         break;
     default:

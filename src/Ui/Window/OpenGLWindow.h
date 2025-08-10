@@ -1,8 +1,5 @@
 #pragma once
 
-#include <Core/EventSystem/ThreadSafeQueue/ThreadSafeQueue.h>
-#include <Core/EventSystem/Events/Event.h>
-
 #include <GL/glew.h>
 #ifdef __linux__
 #include <X11/Xlib.h>
