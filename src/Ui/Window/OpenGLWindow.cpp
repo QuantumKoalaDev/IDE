@@ -441,8 +441,6 @@ void OpenGLWindow::start()
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
-        EventManager& evMg = m_componentManager.getEventManager();
-        evMg.dispatchEvents();
         draw();
         Sleep(16);
     }
