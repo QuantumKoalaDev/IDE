@@ -1,15 +1,13 @@
 #include "EventManager.h"
 
-EventManager::EventManager(ThreadSafeQueue<Event>& uiToCore, ThreadSafeQueue<Event>& coreToUi) :
-    m_coreToUi(coreToUi), m_uiToCore(uiToCore)
-{};
+EventManager::EventManager() {};
 
 void EventManager::dispatchEvent(bool ui)
 {
-    Event e;
+    std::unique_ptr<Event> e;
     if (!ui) e = m_uiToCore.waitAndPop();
     else e = m_coreToUi.waitAndPop();
-    notify(e.getType());
+    notify(e.get()->getType());
 }
 
 void EventManager::addListener(EventType type, IEventListener* listener)
@@ -44,10 +42,11 @@ void EventManager::removeListener(IEventListener* listener, EventType type)
     );
 }
 
-void EventManager::pushEvent(Event event, bool ui)
+void EventManager::pushEvent(std::unique_ptr<Event> event, bool ui)
 {
-    if (ui) m_coreToUi.push(event);
-    else m_uiToCore.push(event);
+
+    if (ui) m_coreToUi.push(std::move(event));
+    else m_uiToCore.push(std::move(event));
 }
 
 void EventManager::notify(EventType type)

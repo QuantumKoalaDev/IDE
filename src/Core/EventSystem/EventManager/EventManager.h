@@ -18,8 +18,8 @@
  */
 class EventManager : public IService
 {
-    ThreadSafeQueue<Event>& m_coreToUi;
-    ThreadSafeQueue<Event>& m_uiToCore;
+    ThreadSafeQueue<std::unique_ptr<Event>> m_coreToUi;
+    ThreadSafeQueue<std::unique_ptr<Event>> m_uiToCore;
     std::unordered_map<EventType, std::vector<IEventListener*>> m_EventListenerMap;
 
     /**
@@ -30,11 +30,13 @@ class EventManager : public IService
 
     public:
     /**
-     * @brief Constructs an EventManager with references to thread-safe event queues.
-     * @param uiToCore Reference to the queue of events from UI to core.
-     * @param coreToUi Reference to the queue of events from core to UI.
+     * @brief Constructs an EventManager with empty thread-safe event queues.
+     * 
+     * Initializes the internal queues for core-to-UI and UI-to-core communication,
+     * as well as the event listener registry. Events are stored and transferred
+     * as unique pointers to ensure exclusive ownership and avoid unnecessary copies.
      */
-    EventManager(ThreadSafeQueue<Event>& uiToCore, ThreadSafeQueue<Event>& coreToUi);
+    EventManager();
     
     /**
      * @brief Default destructor.
@@ -68,13 +70,14 @@ class EventManager : public IService
 
 
     /**
-     * @brief Pushes an event to one of the event queues.
+     * @brief Pushes an event into one of the event queues.
      * 
-     * Depending on the parameter, the event is pushed either to the core-to-UI queue or the UI-to-core queue.
+     * Transfers ownership of the event into the specified queue without copying.
+     * The event will be processed later by the receiving thread when `dispatchEvent()` is called.
      * 
-     * @param event The event to push.
-     * @param ui If true, pushes the event to the core-to-UI queue;
-     *           if false, pushes it to the UI-to-core queue. Default is true.
+     * @param event A unique pointer to the event to push. Ownership is moved into the queue.
+     * @param ui If true, the event is pushed to the core-to-UI queue;
+     *           if false, the event is pushed to the UI-to-core queue. Default is true.
      */
-    void pushEvent(Event event, bool ui = true);
+    void pushEvent(std::unique_ptr<Event> event, bool ui = true);
 };
