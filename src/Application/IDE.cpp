@@ -3,6 +3,7 @@
 #include <Ui/Window/OpenGLWindow.h>
 
 #include <thread>
+#include <iostream>
 
 constexpr int HEIGHT = 480;
 constexpr int WIDHT = 640;
