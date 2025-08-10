@@ -1,5 +1,8 @@
 #include "OpenGLWindow.h"
 
+#include <Core/EventSystem/EventManager/EventManager.h>
+#include <Core/ServiceManagement/ServiceManager.h>
+
 #include <iostream>
 #include <filesystem>
 
@@ -76,8 +79,8 @@ const char* fragmentShaderSource = R"(
     }
 )";
 
-OpenGLWindow::OpenGLWindow(ThreadSafeQueue<Event>& uiToCore, ThreadSafeQueue<Event>& coreToUi,std::atomic<bool>& run) :
-m_running(run), m_uiToCore(uiToCore), m_coreToUi(coreToUi)
+OpenGLWindow::OpenGLWindow(std::atomic<bool>& run) :
+m_running(run)
 {}
             
 
@@ -102,16 +105,24 @@ GLuint OpenGLWindow::createShader(GLenum type, const char* source)
 #ifdef _WIN32
 LRESULT CALLBACK OpenGLWindow::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    OpenGLWindow* myHwnd = reinterpret_cast<OpenGLWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+    // OpenGLWindow* myHwnd = reinterpret_cast<OpenGLWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
     //if (!myHwnd)
     //{
     //    std::cerr << "Window handle was not set correctly, can't handle input..." << std::endl;
     //    return 0;
     //}
+        auto opt = ServiceManager::getService("EventManager");
+
+        if (!opt.has_value()) return DefWindowProc(hWnd, uMsg, wParam, lParam);
+
+        IService& ref = opt.value().get();
+        EventManager& evMg = dynamic_cast<EventManager&>(ref);
+
 
     if (uMsg == WM_CLOSE)
     {
+        evMg.pushEvent(std::make_unique<Event>(EventType::Quit));
         PostQuitMessage(0);
         return 0;
     }
@@ -123,12 +134,12 @@ LRESULT CALLBACK OpenGLWindow::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
         int width = LOWORD(lParam);
         int height = HIWORD(lParam);
 
-        ComponentManager& cpMg = myHwnd->getComponentManager();
-        EventManager& evMg = cpMg.getEventManager();
+        // ComponentManager& cpMg = myHwnd->getComponentManager();
+        // EventManager& evMg = cpMg.getEventManager();
         
-        ResizeEvent* resEv = new ResizeEvent(width, height);
+        // ResizeEvent* resEv = new ResizeEvent(width, height);
 
-        evMg.addEvents(resEv);
+        // evMg.addEvents(resEv);
         break;
     }
     case WM_KEYDOWN:
@@ -138,6 +149,7 @@ LRESULT CALLBACK OpenGLWindow::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
         break;
     }
     case WM_DESTROY:
+        evMg.pushEvent(std::make_unique<Event>(EventType::Quit));
         PostQuitMessage(0);
         break;
     default:
@@ -338,6 +350,13 @@ void OpenGLWindow::start()
 #ifdef __linux__
     while (m_running)
     {
+        auto opt = ServiceManager::getService("EventManager");
+
+        if (!opt.has_value()) continue;
+
+        IService& ref = opt.value().get();
+        EventManager& evMg = dynamic_cast<EventManager&>(ref);
+
         while (XPending(m_dispaly))
         {
             XEvent ev;
@@ -348,7 +367,7 @@ void OpenGLWindow::start()
                 int newHeight = ev.xconfigure.height;
                 int newWidht = ev.xconfigure.width;
 
-                glViewport(0, 0, newWidht, newHeight);
+                // glViewport(0, 0, newWidht, newHeight);
 
                 // for (IWidget* widget : m_widgetList)
                 // {
@@ -387,7 +406,7 @@ void OpenGLWindow::start()
             {
                 if ((Atom)ev.xclient.data.l[0] == m_wmDeleteMessage)
                 {
-                    m_uiToCore.push(Event(EventType::Quit));
+                    evMg.pushEvent(std::make_shared<Event>(EventType::Quit), false);
                 }
             }
         }

@@ -53,7 +53,7 @@ class Core : public IEventListener
      * 
      * Called when an event is received. If the event type is Quit, sets the running flag to false to stop the loop.
      * 
-     * @param type The event type received.
+     * @param event The event received.
      */
-    void onEvent(EventType type) override;
+    void onEvent(std::shared_ptr<Event> event) override;
 };

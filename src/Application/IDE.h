@@ -7,8 +7,6 @@
 
 class IDE
 {
-    ThreadSafeQueue<Event> m_uiToCore;
-    ThreadSafeQueue<Event> m_coreToUi;
     std::atomic<bool> m_running;
 
     public:

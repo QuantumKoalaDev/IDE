@@ -13,12 +13,12 @@ IDE::~IDE() {}
 
 void IDE::start()
 {
-    Core core(m_uiToCore, m_coreToUi, m_running);
+    Core core(m_running);
 
     std::thread coreThread(&Core::run, &core);
 
     // start + setup Ui
-    OpenGLWindow win(m_uiToCore, m_coreToUi, m_running);
+    OpenGLWindow win(m_running);
     bool success = win.createWindow("New Window", HEIGHT, WIDHT);
 
     if (!success)

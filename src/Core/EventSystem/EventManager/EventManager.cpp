@@ -1,13 +1,15 @@
 #include "EventManager.h"
 
+#include <iostream>
+
 EventManager::EventManager() {};
 
 void EventManager::dispatchEvent(bool ui)
 {
-    std::unique_ptr<Event> e;
+    std::shared_ptr<Event> e;
     if (!ui) e = m_uiToCore.waitAndPop();
     else e = m_coreToUi.waitAndPop();
-    notify(e.get()->getType());
+    notify(e);
 }
 
 void EventManager::addListener(EventType type, IEventListener* listener)
@@ -17,7 +19,7 @@ void EventManager::addListener(EventType type, IEventListener* listener)
 
 void EventManager::removeListener(IEventListener* listener, EventType type)
 {
-    if (type == None)
+    if (type == NoneEvent)
     {
         for (auto& [eventType, listeners] : m_EventListenerMap)
         {
@@ -42,21 +44,21 @@ void EventManager::removeListener(IEventListener* listener, EventType type)
     );
 }
 
-void EventManager::pushEvent(std::unique_ptr<Event> event, bool ui)
+void EventManager::pushEvent(std::shared_ptr<Event> event, bool ui)
 {
 
     if (ui) m_coreToUi.push(std::move(event));
     else m_uiToCore.push(std::move(event));
 }
 
-void EventManager::notify(EventType type)
+void EventManager::notify(std::shared_ptr<Event> event)
 {
-    auto it = m_EventListenerMap.find(type);
+    auto it = m_EventListenerMap.find(event.get()->getType());
 
     if (it == m_EventListenerMap.end()) return;
 
     for (auto* listener : it->second)
     {
-        listener->onEvent(type);
+        listener->onEvent(event);
     }
 }

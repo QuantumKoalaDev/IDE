@@ -23,7 +23,7 @@ void Core::run()
     }
 }
 
-void Core::onEvent(EventType type)
+void Core::onEvent(std::shared_ptr<Event> event)
 {
-    if (type == EventType::Quit) m_running = false;
+    if (event.get()->getType() == EventType::Quit) m_running = false;
 }

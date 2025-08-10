@@ -2,10 +2,12 @@
 
 #include <Core/EventSystem/Events/EventType.h>
 
+#include <memory>
+
 class IEventListener
 {
     public:
-    virtual void onEvent(EventType type) = 0;
+    virtual void onEvent(std::shared_ptr<Event> event) = 0;
     virtual ~IEventListener() = default;
 
 };

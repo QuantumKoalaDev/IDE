@@ -4,5 +4,5 @@ enum EventType
 	Keyboard,
 	Mouse,
 	Resize,
-	None
+	NoneEvent
 };

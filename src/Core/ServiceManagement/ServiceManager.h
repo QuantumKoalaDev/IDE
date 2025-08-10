@@ -2,6 +2,8 @@
 
 #include "IService.h"
 
+#include <Core/EventSystem/Events/EventType.h>
+
 #include <string>
 #include <memory>
 #include <mutex>

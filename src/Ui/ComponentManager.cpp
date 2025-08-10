@@ -1,8 +1,6 @@
 #include "ComponentManager.h"
 #include "EventSystem/ResizeEvent.h"
 
-#include "iostream"
-
 ComponentManager::ComponentManager(std::vector<IWidget*> componentList) : m_componentList(componentList), m_parent(nullptr), m_eventManager(EventManager())
 {
 	m_eventManager.registerListener(this, EventType::Resize);

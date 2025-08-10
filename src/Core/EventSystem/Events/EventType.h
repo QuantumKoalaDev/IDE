@@ -5,5 +5,5 @@ enum EventType
     Keyboard,
     Mouse,
     Quit,
-    None
+    NoneEvent
 };

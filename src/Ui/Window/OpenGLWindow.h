@@ -27,8 +27,7 @@ class IWidget;
 class OpenGLWindow
 {
     public:
-        OpenGLWindow(ThreadSafeQueue<Event>& uiToCore, 
-            ThreadSafeQueue<Event>& coreToUi,std::atomic<bool>& run);
+        OpenGLWindow(std::atomic<bool>& run);
 
         bool createWindow(const char* title, int height, int width);
         void deleteWindow();
@@ -75,8 +74,6 @@ class OpenGLWindow
         GLuint m_vbo;
 
         std::atomic<bool>& m_running;
-        ThreadSafeQueue<Event>& m_uiToCore;
-        ThreadSafeQueue<Event>& m_coreToUi;
         
         // std::vector<IWidget*> m_widgetList;
         

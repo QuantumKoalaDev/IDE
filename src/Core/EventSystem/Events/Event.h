@@ -7,7 +7,7 @@ class Event
     EventType m_type;
 
     public:
-    Event() : m_type(None) {};
+    Event() : m_type(EventType::NoneEvent) {};
     Event(EventType type) : m_type(type) {};
     
     EventType getType() { return m_type; }
