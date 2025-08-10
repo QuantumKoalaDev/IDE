@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <string>
+#include <memory>
 
 #include <iostream>
 #include <thread>
@@ -15,7 +16,7 @@ class Core : public IEventListener
 {
     std::atomic<bool>& m_running;
 
-    EventManager m_eventManager;    
+    std::shared_ptr<EventManager> m_eventManager;    
 
     public:
     Core(

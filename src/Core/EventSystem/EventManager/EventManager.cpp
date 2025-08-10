@@ -4,19 +4,12 @@ EventManager::EventManager(ThreadSafeQueue<Event>& uiToCore, ThreadSafeQueue<Eve
     m_coreToUi(coreToUi), m_uiToCore(uiToCore)
 {};
 
-void EventManager::dispatchEvent()
+void EventManager::dispatchEvent(bool ui)
 {
-    Event e = m_uiToCore.waitAndPop();
-
-    switch (e.getType())
-    {
-    case Quit:
-        notify(EventType::Quit);
-        break;
-
-    default:
-        break;
-    }
+    Event e;
+    if (!ui) e = m_uiToCore.waitAndPop();
+    else e = m_coreToUi.waitAndPop();
+    notify(e.getType());
 }
 
 void EventManager::addListener(EventType type, IEventListener* listener)
@@ -51,9 +44,10 @@ void EventManager::removeListener(IEventListener* listener, EventType type)
     );
 }
 
-void EventManager::pushEvent(Event event)
+void EventManager::pushEvent(Event event, bool ui)
 {
-    m_coreToUi.push(event);
+    if (ui) m_coreToUi.push(event);
+    else m_uiToCore.push(event);
 }
 
 void EventManager::notify(EventType type)
