@@ -26,18 +26,12 @@ class Core : public IEventListener
     /**
      * @brief Constructs the Core object.
      * 
-     * Initializes the EventManager with the given input/output event queues,
-     * registers the EventManager as a service, and registers itself as a listener for Quit events.
+     * Initializes the EventManager, registers it as a service,
+     * and registers this Core instance as a listener for Quit events.
      * 
-     * @param in Reference to the input event queue (UI to Core).
-     * @param out Reference to the output event queue (Core to UI).
-     * @param run Reference to an atomic boolean controlling the run state.
+     * @param run Reference to an atomic boolean controlling the application's running state.
      */
-    Core(
-        ThreadSafeQueue<Event>& in, 
-        ThreadSafeQueue<Event>& out,
-        std::atomic<bool>& run
-    );
+    Core(std::atomic<bool>& run);
 
     /**
      * @brief Destructor.

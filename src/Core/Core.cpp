@@ -3,10 +3,8 @@
 #include <Core/ServiceManagement/ServiceManager.h>
 
 Core::Core(
-    ThreadSafeQueue<Event>& in, 
-    ThreadSafeQueue<Event>& out,
     std::atomic<bool>& run
-) : m_running(run), m_eventManager(std::make_shared<EventManager>(in, out))
+) : m_running(run), m_eventManager(std::make_shared<EventManager>())
 {
     ServiceManager::registerService("EventManager", m_eventManager);
     m_eventManager.get()->addListener(EventType::Quit, this);
