@@ -1,6 +1,7 @@
 #include "OpenGLWindow.h"
 
 #include <Core/EventSystem/Events/Event.h>
+#include <Core/EventSystem/Events/ResizeEvent.h>
 #include <Core/EventSystem/EventManager/EventManager.h>
 #include <Core/ServiceManagement/ServiceManager.h>
 
@@ -82,7 +83,19 @@ const char* fragmentShaderSource = R"(
 
 OpenGLWindow::OpenGLWindow(std::atomic<bool>& run) :
 m_running(run)
-{}
+{
+    auto opt = ServiceManager::getService("EventManager");
+
+    if (!opt.has_value())
+    {
+        std::cerr << "Error" << std::endl;
+        return;
+    }
+
+    IService& ref = opt.value().get();
+    EventManager& evMg = dynamic_cast<EventManager&>(ref);
+    evMg.addListener(EventType::Resize, this);
+}
             
 
 GLuint OpenGLWindow::createShader(GLenum type, const char* source)
@@ -108,11 +121,6 @@ LRESULT CALLBACK OpenGLWindow::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
 {
     // OpenGLWindow* myHwnd = reinterpret_cast<OpenGLWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
-    //if (!myHwnd)
-    //{
-    //    std::cerr << "Window handle was not set correctly, can't handle input..." << std::endl;
-    //    return 0;
-    //}
         auto opt = ServiceManager::getService("EventManager");
 
         if (!opt.has_value()) return DefWindowProc(hWnd, uMsg, wParam, lParam);
@@ -135,12 +143,7 @@ LRESULT CALLBACK OpenGLWindow::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
         int width = LOWORD(lParam);
         int height = HIWORD(lParam);
 
-        // ComponentManager& cpMg = myHwnd->getComponentManager();
-        // EventManager& evMg = cpMg.getEventManager();
-        
-        // ResizeEvent* resEv = new ResizeEvent(width, height);
-
-        // evMg.addEvents(resEv);
+        evMg.pushEvent(std::make_shared<ResizeEvent>(ResizeEvent(width, height)));
         break;
     }
     case WM_KEYDOWN:
@@ -357,6 +360,7 @@ void OpenGLWindow::start()
 
         IService& ref = opt.value().get();
         EventManager& evMg = dynamic_cast<EventManager&>(ref);
+        evMg.dispatchEvent(true);
 
         while (XPending(m_dispaly))
         {
@@ -435,6 +439,12 @@ void OpenGLWindow::start()
     MSG msg;
     while (m_running)
     {
+        auto opt = ServiceManager::getService("EventManager");
+        if (!opt.has_value()) continue;
+        IService& ref = opt.value().get();
+        EventManager& evMg = dynamic_cast<EventManager&>(ref);
+        evMg.dispatchEvent(true);
+
         if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
             if (msg.message == WM_QUIT) break;
@@ -461,3 +471,13 @@ int OpenGLWindow::myIOErrorHandler(Display* display)
     return -1;
 }
 #endif
+
+void OpenGLWindow::onEvent(std::shared_ptr<Event> event)
+{
+    if (event.get()->getType() == EventType::Resize)
+    {
+        std::shared_ptr<ResizeEvent> resEv = std::dynamic_pointer_cast<ResizeEvent>(event);
+
+        glViewport(0, 0, resEv.get()->getWidht(), resEv.get()->getHeight());
+    }
+}

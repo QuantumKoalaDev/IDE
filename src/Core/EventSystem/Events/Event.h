@@ -9,6 +9,7 @@ class Event
     public:
     Event() : m_type(EventType::NoneEvent) {};
     Event(EventType type) : m_type(type) {};
+    virtual ~Event() = default;
     
-    EventType getType() { return m_type; }
+    EventType getType() const { return m_type; }
 };

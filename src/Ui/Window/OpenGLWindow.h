@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Core/EventSystem/IEventListener.h>
+
 #include <GL/glew.h>
 #ifdef __linux__
 #include <X11/Xlib.h>
@@ -21,7 +23,7 @@
 
 class IWidget;
 
-class OpenGLWindow
+class OpenGLWindow : public IEventListener
 {
     public:
         OpenGLWindow(std::atomic<bool>& run);
@@ -80,4 +82,6 @@ class OpenGLWindow
 
         GLuint createShader(GLenum type, const char* source);
         void draw();
+
+        void onEvent(std::shared_ptr<Event> event) override;
 };
