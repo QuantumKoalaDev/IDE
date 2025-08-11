@@ -6,10 +6,14 @@ EventManager::EventManager() {};
 
 void EventManager::dispatchEvent(bool ui)
 {
+
     std::shared_ptr<Event> e;
-    if (!ui) e = m_uiToCore.waitAndPop();
-    else e = m_coreToUi.waitAndPop();
-    notify(e);
+    bool hasEvent;
+
+    if (!ui) hasEvent = m_uiToCore.tryPop(e);
+    else hasEvent = m_coreToUi.tryPop(e);
+
+    if (hasEvent) notify(e);
 }
 
 void EventManager::addListener(EventType type, IEventListener* listener)
