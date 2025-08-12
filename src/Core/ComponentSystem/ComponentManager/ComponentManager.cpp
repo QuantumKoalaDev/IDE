@@ -17,9 +17,10 @@ const std::string& ComponentManager::getCurrentContext() const
     return m_currentContext;
 }
 
-void ComponentManager::setCurrentContext(std::string context)
+void ComponentManager::setCurrentContext(std::string context, int id)
 {
     m_currentContext = context;
+    m_currentId = id;
 }
 
 int ComponentManager::addComponent(IComponent* comp, ComponentType type)

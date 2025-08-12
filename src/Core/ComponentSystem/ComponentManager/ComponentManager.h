@@ -45,15 +45,16 @@ class ComponentManager
     const std::string& getCurrentContext() const;
 
     /**
-     * @brief Sets the current context.
+     * @brief Sets the current operating context.
      *
-     * Updates the context to the given string value. The context can be
-     * used to represent the active state, mode, or environment in which
-     * the system is operating.
+     * Updates the system's current context to the specified string,
+     * which can represent the active state, mode, or environment.
+     * Additionally, optionally sets the ID of the active component.
      *
-     * @param context The new context string to set.
+     * @param context The new context to set.
+     * @param id Optional ID of the active component; defaults to -1 indicating no active component.
      */
-    void setCurrentContext(std::string context);
+    void setCurrentContext(std::string context, int id = -1);
 
     /**
      * @brief Adds a new component to the manager.
