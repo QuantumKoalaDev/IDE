@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <unordered_map>
 
 namespace Keymapping
@@ -253,4 +254,64 @@ namespace Keymapping
 		return (it != x11KeySymToInternalMap.end()) ? it->second : -1;
 	}
 #endif
+
+	std::unordered_map<int, std::string> internalToStringMap =
+	{
+		{ Keymapping::ID_A, "a" },
+		{ Keymapping::ID_B, "b" },
+		{ Keymapping::ID_C, "c" },
+		{ Keymapping::ID_D, "d" },
+		{ Keymapping::ID_E, "e" },
+		{ Keymapping::ID_F, "f" },
+		{ Keymapping::ID_G, "g" },
+		{ Keymapping::ID_H, "h" },
+		{ Keymapping::ID_I, "i" },
+		{ Keymapping::ID_J, "j" },
+		{ Keymapping::ID_K, "k" },
+		{ Keymapping::ID_L, "l" },
+		{ Keymapping::ID_M, "m" },
+		{ Keymapping::ID_N, "n" },
+		{ Keymapping::ID_O, "o" },
+		{ Keymapping::ID_P, "p" },
+		{ Keymapping::ID_Q, "q" },
+		{ Keymapping::ID_R, "r" },
+		{ Keymapping::ID_S, "s" },
+		{ Keymapping::ID_T, "t" },
+		{ Keymapping::ID_U, "u" },
+		{ Keymapping::ID_V, "v" },
+		{ Keymapping::ID_W, "w" },
+		{ Keymapping::ID_X, "x" },
+		{ Keymapping::ID_Y, "y" },
+		{ Keymapping::ID_Z, "z" },
+
+		// Zahlen
+		{ Keymapping::ID_1, "1" },
+		{ Keymapping::ID_2, "2" },
+		{ Keymapping::ID_3, "3" },
+		{ Keymapping::ID_4, "4" },
+		{ Keymapping::ID_5, "5" },
+		{ Keymapping::ID_6, "6" },
+		{ Keymapping::ID_7, "7" },
+		{ Keymapping::ID_8, "8" },
+		{ Keymapping::ID_9, "9" },
+		{ Keymapping::ID_0, "0" },
+
+		// Steuerzeichen
+		{ Keymapping::ID_SPACE, "SPACE" },
+		{ Keymapping::ID_TAB, "TAB" },
+		{ Keymapping::ID_ENTER, "ENTER" },
+		{ Keymapping::ID_BACKSPACE, "BACKSPACE" },
+		{ Keymapping::ID_ESC, "ESC" },
+
+		{ Keymapping::ID_SHIFT, "LSHIFT" },
+		{ Keymapping::ID_CTRL, "CTRL" },
+		{ Keymapping::ID_ALT, "ALT" },
+	};
+
+	std::string InternalToString(int keycode) {
+		auto it = internalToStringMap.find(keycode);
+		return (it != internalToStringMap.end()) ? it->second : "Not Found";
+	}
+
 }
+
