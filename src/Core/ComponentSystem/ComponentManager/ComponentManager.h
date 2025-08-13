@@ -2,6 +2,8 @@
 
 #include <Core/ComponentSystem/Components/IComponent.h>
 #include <Core/ComponentSystem/ComponentType.h>
+#include <Core/ComponentSystem/Context.h>
+#include <Core/EventSystem/IEventListener.h>
 
 #include <vector>
 #include <string>
@@ -13,17 +15,18 @@
  * assigning them unique IDs, and ensuring that allocated memory is freed
  * when the manager is destroyed.
  */
-class ComponentManager
+class ComponentManager : public IEventListener
 {
     unsigned int m_currentId = 0;
+    IComponent* m_focused = nullptr;
     std::vector<IComponent*> m_componentList;
-    std::string m_currentContext = "";
+    Context m_currentContext = Context::GLOBAL;
 
     public:
     /**
      * @brief Constructs an empty ComponentManager.
      */
-    ComponentManager() {};
+    ComponentManager();
 
     /**
      * @brief Destructor that cleans up all stored components.
@@ -42,7 +45,7 @@ class ComponentManager
      *
      * @return const std::string& A constant reference to the current context string.
      */
-    const std::string& getCurrentContext() const;
+    const Context getCurrentContext() const;
 
     /**
      * @brief Sets the current operating context.
@@ -54,7 +57,7 @@ class ComponentManager
      * @param context The new context to set.
      * @param id Optional ID of the active component; defaults to -1 indicating no active component.
      */
-    void setCurrentContext(std::string context, int id = -1);
+    void setCurrentContext(Context context, int id = -1);
 
     /**
      * @brief Adds a new component to the manager.
@@ -84,4 +87,6 @@ class ComponentManager
      * @param id The unique identifier of the component to delete.
      */
     void deleteComponent(unsigned int id);
+
+    void onEvent(std::shared_ptr<Event> event) override;
 };
