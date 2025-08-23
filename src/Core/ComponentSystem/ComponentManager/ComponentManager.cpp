@@ -11,8 +11,11 @@ ComponentManager::ComponentManager()
 {
     auto opt = ServiceManager::getService("EventManager");
 
-    if (!opt.has_value()) std::cerr << "EventManager for ComponentManger registration was not found!" << std::endl;
-
+    if (!opt.has_value())
+    {
+        std::cerr << "EventManager for ComponentManger registration was not found!" << std::endl;
+        return;
+    }
     IService& ref = opt.value().get();
     EventManager& evMg = dynamic_cast<EventManager&>(ref);
     evMg.addListener(EventType::Keyboard, this);
@@ -28,6 +31,11 @@ ComponentManager::~ComponentManager()
     m_componentList.clear();
 }
 
+unsigned int ComponentManager::getCurrentId() const
+{
+    return m_currentId;
+}
+
 const Context ComponentManager::getCurrentContext() const
 {
     return m_currentContext;
@@ -39,11 +47,16 @@ void ComponentManager::setCurrentContext(Context context, int id)
 
     if (id == -1) m_focused = nullptr;
 
-    std::find_if(m_componentList.begin(), m_componentList.end(), [&](IComponent* comp)
+    auto it = std::find_if(m_componentList.begin(), m_componentList.end(), [&](IComponent* comp)
         {
-            comp->getId() == id;
+            return comp->getId() == id;
         }
     );
+
+    if (it != m_componentList.end())
+    {
+        m_focused = *it;
+    }
 }
 
 int ComponentManager::addComponent(IComponent* comp, ComponentType type)
@@ -72,8 +85,10 @@ void ComponentManager::deleteComponent(unsigned int id)
     );
 }
 
-void ComponentManager::onEvent(std::shared_ptr<Event> event)
+void ComponentManager::onEvent(const Core::EventSystem::Events::Event& event)
 {
+    m_currentContext = Context::CODEEDTOR;
+    m_focused = m_componentList[0];
     // TODO:
     // Implementing KeybindingManger and including it here
 

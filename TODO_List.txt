@@ -1,0 +1,240 @@
+To-Do für mehr performance:
+- Events auf std::variant umstellen (kann alle events speichern) (verschieden für Core->Ui und Ui->Core)
+- Mutex-Queue durch SPSC ersetzen (
+- Coalescing für events (z.B. Mouse und Resize events werden nur jeweils die letzen des Frames beachtet)
+- Optional: Arena/Pool für große Payloads (wie z.B. paste/copy)
+- Später ein Job System fpr die corearbeiten (syntaxhighlighter etc.) MPMC intern
+
+=============================================================================================================================================================================
+// 1) Event-Definitionen (value types)
+struct KeyEvent   { uint32_t unicode; bool down; };
+struct MouseMove  { int x, y; };
+struct MouseBtn   { int button; bool down; };
+struct Resize     { int w, h; };
+struct InsertText { std::string_view text; /* points into producer arena */ };
+
+using UIToCore = std::variant<KeyEvent, MouseMove, MouseBtn, Resize, InsertText>;
+
+struct RenderDirty { bool cursorOnly; };
+struct FileOpened  { /* ... */ };
+using CoreToUI = std::variant<RenderDirty, FileOpened /*, ...*/>;
+
+
+// 2) Lockfreie SPSC-Queue (Ringbuffer, ohne malloc)
+template<class T, size_t N>
+class SPSC {
+    static_assert((N & (N - 1)) == 0, "N must be power of two");
+    std::array<T, N> buf{};
+    std::atomic<size_t> head{0}; // write index (producer)
+    std::atomic<size_t> tail{0}; // read index (consumer)
+public:
+    bool push(const T& v) {
+        size_t h = head.load(std::memory_order_relaxed);
+        size_t t = tail.load(std::memory_order_acquire);
+        if (((h + 1) & (N - 1)) == (t & (N - 1))) return false; // full
+        buf[h & (N - 1)] = v;
+        head.store(h + 1, std::memory_order_release);
+        return true;
+    }
+    bool pop(T& out) {
+        size_t t = tail.load(std::memory_order_relaxed);
+        size_t h = head.load(std::memory_order_acquire);
+        if (t == h) return false; // empty
+        out = std::move(buf[t & (N - 1)]);
+        tail.store(t + 1, std::memory_order_release);
+        return true;
+    }
+    bool empty() const {
+        return tail.load(std::memory_order_acquire) ==
+               head.load(std::memory_order_acquire);
+    }
+};
+
+
+// 3) Zwei Queues für beide Richtungen
+inline SPSC<UIToCore, 1024> q_ui_to_core;
+inline SPSC<CoreToUI, 1024> q_core_to_ui;
+
+
+
+// 4) Producer-Beispiel (UI-Thread)
+void onMouseMove(int x, int y) {
+    // Coalescing: falls voll, versuche die letzte MouseMove-Position zu überschreiben
+    if (!q_ui_to_core.push(MouseMove{x,y})) {
+        // einfache Coalesce-Strategie: verwerfe und merke "pending"
+        static std::atomic<MouseMove> lastMM;
+        lastMM.store(MouseMove{x,y}, std::memory_order_relaxed);
+        // UI-Tick packt lastMM später wieder rein
+    }
+}
+
+
+// 5) Consumer-Beispiel (Core-Thread)
+void coreLoop() {
+    // optional: lokaler Arena-Allocator für große Payloads
+    while (running) {
+        // Batch verarbeiten
+        for (int i = 0; i < 256; ++i) {
+            UIToCore ev;
+            if (!q_ui_to_core.pop(ev)) break;
+            std::visit([&](auto&& e){ handle(e); }, ev);
+        }
+
+        // Arbeit erledigen (Parsing, LSP, Syntax, etc.) -> Jobs
+        runJobsTimeboxed(2_ms);
+
+        // Deltas an UI schicken (coalesced)
+        q_core_to_ui.push(RenderDirty{ /*cursorOnly=*/false });
+
+        // Idle/Wait-Strategie (eventfd/condvar/spin-then-sleep)
+        platformWaitForWakeupOrTimeout();
+    }
+}
+
+
+=============================================================================================================================================================================
+
+🔹 Gap Buffer
+
+Idee: Ein Array mit einer „Lücke“ (Gap) an der aktuellen Cursor-Position.
+
+Der Text ist in zwei Teilen gespeichert:
+
+vor der Lücke (before_gap)
+
+nach der Lücke (after_gap)
+
+Einfügen = einfach in die Lücke schreiben und die Lücke kleiner machen.
+
+Löschen = Lücke größer machen.
+
+Cursor bewegen = Gap verschieben (Kopieren von Zeichen nötig).
+
+📈 Eigenschaften:
+
+Sehr schnell für lokale Edits um den Cursor (Tippen, Backspace).
+
+Weniger effizient, wenn man viel am Anfang/Ende hin- und herspringt.
+
+Einfach zu implementieren, oft in simplen Editoren verwendet (Emacs klassisch).
+
+
+🔹 Piece Table
+
+Idee: Der Text liegt in zwei unveränderlichen Buffern:
+
+Original-Buffer (vom Laden)
+
+Add-Buffer (für neue Inserts)
+
+Man speichert eine Liste von „Pieces“ (= Verweise auf Teilbereiche dieser Buffers).
+
+Einfügen = neues Stück in Add-Buffer schreiben und ein „Piece“ in die Tabelle einfügen.
+
+Löschen = man passt nur die Piece-Liste an, der Text selbst bleibt unverändert.
+
+📈 Eigenschaften:
+
+Extrem effizient bei Undo/Redo, weil alte Versionen einfach als andere Piece-Listen existieren.
+
+Einfügen/Löschen ist billig (O(1) bis O(log n)), da man nur Stücke umhängt.
+
+Sehr gut geeignet für große Dateien.
+
+Wurde z. B. im MS Word-Editor eingesetzt.
+
+
+
+🔹 Rope
+
+Idee: Ein balancierter Binärbaum (z. B. AVL oder Red-Black Tree), dessen Blätter Strings (Chunks) sind.
+
+Knoten speichern Längen → schnelle Navigation zu Position i.
+
+Einfügen/Löschen = neue Knoten erzeugen und den Baum neu balancieren.
+
+📈 Eigenschaften:
+
+Gut für sehr große Texte (100MB+), weil man nicht alles in einem Array halten muss.
+
+Gut parallelisierbar (Chunks können unabhängig verarbeitet werden, z. B. fürs Syntaxhighlighting).
+
+Etwas komplexer zu implementieren.
+
+
+🔹 Praxis
+
+Gap Buffer → super für „klassische“ Editoren mit lokalem Cursor-Tippen.
+
+Piece Table → beliebt für Editoren mit mächtigem Undo/Redo (Word, viele IDEs).
+
+Rope → für riesige Dateien oder wenn du Multi-Threading im Text willst.
+
+Manche modernen Editoren (wie VS Code/Monaco) nutzen intern Piece Table-ähnliche Strukturen.
+
+
+
+
+
+
+
+
+
+
+#pragma once
+#include <vector>
+#include <atomic>
+#include <optional>
+#include <thread>
+#include <cassert>
+
+template<typename T, size_t Capacity>
+class LockFreeRingBuffer
+{
+    static_assert((Capacity & (Capacity - 1)) == 0, "Capacity must be power of 2 for mask optimization");
+
+    std::vector<T> m_buffer;
+    std::atomic<size_t> m_head{0};
+    std::atomic<size_t> m_tail{0};
+
+public:
+    LockFreeRingBuffer() : m_buffer(Capacity) {}
+
+    // Producer: Push an event
+    bool push(T&& item)
+    {
+        size_t head = m_head.load(std::memory_order_relaxed);
+        size_t next = (head + 1) & (Capacity - 1);
+
+        if (next == m_tail.load(std::memory_order_acquire))
+        {
+            // Buffer full
+            return false;
+        }
+
+        m_buffer[head] = std::move(item);
+        m_head.store(next, std::memory_order_release);
+        return true;
+    }
+
+    // Consumer: Pop an event
+    std::optional<T> pop()
+    {
+        size_t tail = m_tail.load(std::memory_order_relaxed);
+        if (tail == m_head.load(std::memory_order_acquire))
+        {
+            // Buffer empty
+            return std::nullopt;
+        }
+
+        T item = std::move(m_buffer[tail]);
+        m_tail.store((tail + 1) & (Capacity - 1), std::memory_order_release);
+        return item;
+    }
+
+    // Optional: check if empty
+    bool empty() const
+    {
+        return m_head.load(std::memory_order_acquire) == m_tail.load(std::memory_order_acquire);
+    }
+};

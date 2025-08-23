@@ -1,12 +1,26 @@
 #include "OpenGLWindow.h"
 
 #include <Core/EventSystem/Events/Event.h>
+#include <Core/EventSystem/Events/KeyboardEvent.h>
+#include <Core/EventSystem/Events/EmptyEvent.h>
 #include <Core/EventSystem/Events/ResizeEvent.h>
+#include <Core/EventSystem/Events/TextEvents/CreateTextboxEvent.h>
+#include <Core/EventSystem/Events/TextEvents/SingleLineUpdateEvent.h>
 #include <Core/EventSystem/EventManager/EventManager.h>
 #include <Core/ServiceManagement/ServiceManager.h>
 
+#include <Core/Constants/Keymap.h>
+
+#include <Ui/Widgets/Textbox/Textbox.h>
+
 #include <iostream>
 #include <filesystem>
+
+#include <chrono>
+
+using namespace Core::EventSystem::Events;
+using namespace Core::EventSystem::Events::TextEvents;
+using Ui::Widgets::Textbox;
 
 #ifdef __linux__
 std::atomic<bool>* OpenGLWindow::s_runningPtr = nullptr;
@@ -95,6 +109,10 @@ m_running(run)
     IService& ref = opt.value().get();
     EventManager& evMg = dynamic_cast<EventManager&>(ref);
     evMg.addListener(EventType::Resize, this);
+    evMg.addListener(EventType::CreateTextbox, this);
+    evMg.addListener(EventType::TextBufferUpdate, this);
+    evMg.addListener(EventType::ReplaceTextLine, this);
+    evMg.addListener(EventType::InsertTextLine, this);
 }
             
 
@@ -131,7 +149,7 @@ LRESULT CALLBACK OpenGLWindow::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
 
     if (uMsg == WM_CLOSE)
     {
-        evMg.pushEvent(std::make_shared<Event>(EventType::Quit), false);
+        evMg.pushEvent(Event(EventType::Quit, EmptyEvent()), false);
         PostQuitMessage(0);
         return 0;
     }
@@ -143,17 +161,21 @@ LRESULT CALLBACK OpenGLWindow::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
         int width = LOWORD(lParam);
         int height = HIWORD(lParam);
 
-        evMg.pushEvent(std::make_shared<ResizeEvent>(ResizeEvent(width, height)));
+        evMg.pushEvent(Event(EventType::Resize, ResizeEvent(width, height)));
         break;
     }
     case WM_KEYDOWN:
     {
         char key = static_cast<char>(wParam);
-        std::cout << "Key pressed: " << key << std::endl;
+        //std::cout << "Key pressed: " << key << std::endl;
+
+        int keyCode = Keymapping::MapVirtualKeyToInternal(key);
+        std::cout << "EventPushed: " << std::chrono::system_clock::now() << '\n';
+        evMg.pushEvent(Event(EventType::Keyboard, KeyboardEvent(keyCode, false, false)));
         break;
     }
     case WM_DESTROY:
-        evMg.pushEvent(std::make_shared<Event>(EventType::Quit), false);
+        evMg.pushEvent(Event(EventType::Quit, EmptyEvent()), false);
         PostQuitMessage(0);
         break;
     default:
@@ -290,10 +312,6 @@ bool OpenGLWindow::createWindow(const char* title, int height, int width)
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
     glEnableVertexAttribArray(0);
 
-    std::filesystem::path currentPath = std::filesystem::current_path().append("resources/Fonts/Ubuntu-Regular.ttf");
-    // m_fontRenderer = new FontRenderer(currentPath.string().c_str(), 20);
-    // m_widgetList.push_back(new Toolbar(640, 480, m_program));
-
     return true;
 }
 
@@ -316,13 +334,6 @@ void OpenGLWindow::deleteWindow()
     ReleaseDC(m_hwnd, m_hdc);
     DestroyWindow(m_hwnd);
     #endif
-
-    // for (IWidget* widget : m_widgetList)
-    // {
-    //     delete widget;
-    //     widget = nullptr;
-    // }
-    
 }
 
 
@@ -339,6 +350,12 @@ void OpenGLWindow::draw()
 
 
     glBindVertexArray(0);
+
+    for (auto& [id, widget] : m_widgetMap)
+    {
+        widget->draw();
+    }
+
 
     #ifdef __linux__
     glXSwapBuffers(m_dispaly, m_win);
@@ -451,17 +468,16 @@ void OpenGLWindow::start()
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
-        draw();
-        Sleep(16);
+        //draw();
+        //Sleep(16);
     }
 #endif
 }
 
-// void OpenGLWindow::addWidget(IWidget* widget)
-// {
-//     m_componentManager.addComponent(widget);
-//     //m_widgetList.push_back(widget);
-// }
+void OpenGLWindow::addWidget(std::unique_ptr<Widget> widget)
+ {
+     m_widgetMap[widget->getId()] = std::move(widget);
+ }
 
 #ifdef __linux__
 int OpenGLWindow::myIOErrorHandler(Display* display)
@@ -472,12 +488,45 @@ int OpenGLWindow::myIOErrorHandler(Display* display)
 }
 #endif
 
-void OpenGLWindow::onEvent(std::shared_ptr<Event> event)
+void OpenGLWindow::onEvent(const Event& event)
 {
-    if (event.get()->getType() == EventType::Resize)
-    {
-        std::shared_ptr<ResizeEvent> resEv = std::dynamic_pointer_cast<ResizeEvent>(event);
+    std::visit([&](auto&& concreteEvent)
+        {
+            using T = std::decay_t<decltype(concreteEvent)>;
 
-        glViewport(0, 0, resEv.get()->getWidht(), resEv.get()->getHeight());
-    }
+            if constexpr (std::is_same_v<T, ResizeEvent>)
+            {
+                glViewport(0, 0, concreteEvent.m_width, concreteEvent.m_height);
+
+                for (auto& [id, widget] : m_widgetMap)
+                {
+                    widget->resize(concreteEvent.m_height, concreteEvent.m_width);
+                }
+            }
+            else if constexpr (std::is_same_v<T, CreateTextboxEvent>)
+            {
+                std::filesystem::path currentPath = std::filesystem::current_path().append("resources/Fonts/Ubuntu-Regular.ttf");
+
+                addWidget(
+                    std::make_unique<Textbox>(
+                        concreteEvent.componentId,
+                        640, 480, 20,
+                        currentPath.string(),
+                        std::move(concreteEvent.viewPort),
+                        concreteEvent.cursor
+                    )
+                );
+            }
+            else if constexpr (std::is_same_v<T, SingleLineUpdateEvent>)
+            {
+                auto it = m_widgetMap.find(concreteEvent.componentId);
+
+                if (it == m_widgetMap.end()) return;
+
+                if (Textbox* textBox = dynamic_cast<Textbox*>(it->second.get()))
+                    textBox->updateSingleLine(concreteEvent, event.type);
+            }
+
+
+        }, event.event);
 }

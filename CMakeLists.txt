@@ -14,6 +14,10 @@ set(GLEW_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/external/glew-2.2.0/include")
 file(GLOB_RECURSE UI_SOURCE CONFIGURE_DEPENDS
     "${CMAKE_SOURCE_DIR}/src/Ui/Window/*.cpp"
     "${CMAKE_SOURCE_DIR}/src/Ui/Window/*.h"
+    "${CMAKE_SOURCE_DIR}/src/Ui/Renderer/*.cpp"
+    "${CMAKE_SOURCE_DIR}/src/Ui/Renderer/*.h"
+    "${CMAKE_SOURCE_DIR}/src/Ui/Widgets/*.cpp"
+    "${CMAKE_SOURCE_DIR}/src/Ui/Widgets/*.h"
 )
 
 add_library(IDEUI STATIC ${UI_SOURCE})
@@ -108,3 +112,7 @@ endif()
 target_link_libraries(IDE.out PRIVATE IDEUI)
 target_link_libraries(IDE.out PRIVATE IDECORE)
 target_link_libraries(IDE.out PRIVATE IDEApplication)
+
+if (MSVC)
+    target_link_options(IDE.out PRIVATE /PROFILE)
+endif()

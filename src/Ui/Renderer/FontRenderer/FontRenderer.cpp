@@ -2,6 +2,9 @@
 
 #include <iostream>
 
+using namespace Core::UiResources::Containers;
+using namespace Ui::Renderer;
+
 static const char* vertexShaderSource = R"(
     #version 330 core
     layout(location = 0) in vec4 vertex;
@@ -26,6 +29,8 @@ static const char* fragmentShaderSource = R"(
         FragColor = vec4(textColor, alpha);
     }
 )";
+
+
 
 FontRenderer::FontRenderer(const char* fontPath, int fontSize)
 {
@@ -108,6 +113,7 @@ FontRenderer::FontRenderer(const char* fontPath, int fontSize)
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
 }
 
 FontRenderer::~FontRenderer()
@@ -117,7 +123,7 @@ FontRenderer::~FontRenderer()
     glDeleteProgram(m_shader);
 }
 
-void FontRenderer::renderText(const std::string& text, float x, float y, float scale, const Color& color)
+void FontRenderer::drawText(const std::string& text, float x, float y, float scale, const Color& color)
 {
     setOrthoProjection(0.f, 640.f, 0.f, 480.f);
 
@@ -152,6 +158,7 @@ void FontRenderer::renderText(const std::string& text, float x, float y, float s
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(m_vao);
 
+
     for (char c : text)
     {
         Character ch = m_characters[c];
@@ -175,13 +182,13 @@ void FontRenderer::renderText(const std::string& text, float x, float y, float s
 
         glBindTexture(GL_TEXTURE_2D, ch.TextureID);
 
+
         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
 
         GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
         if (status != GL_FRAMEBUFFER_COMPLETE)
             std::cerr << "Framebuffer not complete: " << std::hex << status << std::endl;
-
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 

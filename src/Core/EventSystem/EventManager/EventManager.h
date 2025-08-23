@@ -18,15 +18,15 @@
  */
 class EventManager : public IService
 {
-    ThreadSafeQueue<std::shared_ptr<Event>> m_coreToUi;
-    ThreadSafeQueue<std::shared_ptr<Event>> m_uiToCore;
+    ThreadSafeQueue<Core::EventSystem::Events::Event, 1024> m_coreToUi;
+    ThreadSafeQueue<Core::EventSystem::Events::Event,  1024> m_uiToCore;
     std::unordered_map<EventType, std::vector<IEventListener*>> m_EventListenerMap;
 
     /**
      * @brief Notify all listeners registered for a given event type.
      * @param event The event to notify listeners about.
      */
-    void notify(std::shared_ptr<Event> event);
+    void notify(Core::EventSystem::Events::Event event);
 
     public:
     /**
@@ -79,5 +79,5 @@ class EventManager : public IService
      * @param ui If true, the event is pushed to the core-to-UI queue;
      *           if false, the event is pushed to the UI-to-core queue. Default is true.
      */
-    void pushEvent(std::shared_ptr<Event> event, bool ui = true);
+    void pushEvent(Core::EventSystem::Events::Event event, bool ui = true);
 };

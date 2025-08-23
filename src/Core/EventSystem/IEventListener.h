@@ -7,7 +7,7 @@
 class IEventListener
 {
     public:
-    virtual void onEvent(std::shared_ptr<Event> event) = 0;
+    virtual void onEvent(const Core::EventSystem::Events::Event& event) = 0;
     virtual ~IEventListener() = default;
 
 };

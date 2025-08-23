@@ -2,6 +2,8 @@
 
 #include <Core/EventSystem/IEventListener.h>
 
+#include <Ui/Widgets/Widget.h>
+
 #include <GL/glew.h>
 #ifdef __linux__
 #include <X11/Xlib.h>
@@ -18,6 +20,7 @@
 
 
 #include <atomic>
+#include <unordered_map>
 #include <vector>
 
 
@@ -25,6 +28,7 @@ class IWidget;
 
 class OpenGLWindow : public IEventListener
 {
+
     public:
         OpenGLWindow(std::atomic<bool>& run);
 
@@ -32,17 +36,6 @@ class OpenGLWindow : public IEventListener
         void deleteWindow();
 
         void start();
-
-        // void addWidget(IWidget* widget);
-
-        // just for testing
-        /*void setViewPort(int newWidht, int newHeight) { 
-            glViewport(0, 0, newWidht, newHeight);
-            for (IWidget* widget : m_widgetList)
-            {
-                widget->resize(newHeight, newWidht);
-            }
-        };*/
 
         // gets replaced later
         GLuint getProgramm() const { return m_program; }
@@ -73,9 +66,9 @@ class OpenGLWindow : public IEventListener
         GLuint m_vbo;
 
         std::atomic<bool>& m_running;
-        
-        // std::vector<IWidget*> m_widgetList;
-        
+
+        std::unordered_map<size_t, std::unique_ptr<Widget>> m_widgetMap =  {};
+                
         #ifdef _WIN32
         static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
         #endif
@@ -83,5 +76,7 @@ class OpenGLWindow : public IEventListener
         GLuint createShader(GLenum type, const char* source);
         void draw();
 
-        void onEvent(std::shared_ptr<Event> event) override;
+        void addWidget(std::unique_ptr<Widget> widget);
+
+        void onEvent(const Core::EventSystem::Events::Event& event) override;
 };

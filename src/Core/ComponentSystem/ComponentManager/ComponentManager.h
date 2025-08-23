@@ -36,6 +36,8 @@ class ComponentManager : public IEventListener
      */
     ~ComponentManager();
 
+    unsigned int getCurrentId() const;
+
     /**
      * @brief Retrieves the name of the current context.
      *
@@ -88,5 +90,5 @@ class ComponentManager : public IEventListener
      */
     void deleteComponent(unsigned int id);
 
-    void onEvent(std::shared_ptr<Event> event) override;
+    void onEvent(const Core::EventSystem::Events::Event& event) override;
 };

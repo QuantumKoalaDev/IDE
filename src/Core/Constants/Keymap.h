@@ -81,8 +81,8 @@ namespace Keymapping
 
 	// Sonderzeichen ASCII 91–96
 	constexpr int ID_LEFT_BRACKET = 523; // [
-	constexpr int ID_BACKSLASH = 524; // \
-		constexpr int ID_RIGHT_BRACKET   = 525; // ]
+	constexpr int ID_BACKSLASH = 524; // '\'
+	constexpr int ID_RIGHT_BRACKET   = 525; // ]
 	constexpr int ID_CARET = 526; // ^
 	constexpr int ID_UNDERSCORE = 527; // _
 	constexpr int ID_GRAVE = 528; // `
@@ -131,63 +131,7 @@ namespace Keymapping
 
 #ifdef _WIN32
 #include <Windows.h>
-	std::unordered_map<UINT, int> vkToInternalKeyMap = {
-		// Buchstaben
-		{ VK_A, Keymapping::ID_A },
-		{ VK_B, Keymapping::ID_B },
-		{ VK_C, Keymapping::ID_C },
-		{ VK_D, Keymapping::ID_D },
-		{ VK_E, Keymapping::ID_E },
-		{ VK_F, Keymapping::ID_F },
-		{ VK_G, Keymapping::ID_G },
-		{ VK_H, Keymapping::ID_H },
-		{ VK_I, Keymapping::ID_I },
-		{ VK_J, Keymapping::ID_J },
-		{ VK_K, Keymapping::ID_K },
-		{ VK_L, Keymapping::ID_L },
-		{ VK_M, Keymapping::ID_M },
-		{ VK_N, Keymapping::ID_N },
-		{ VK_O, Keymapping::ID_O },
-		{ VK_P, Keymapping::ID_P },
-		{ VK_Q, Keymapping::ID_Q },
-		{ VK_R, Keymapping::ID_R },
-		{ VK_S, Keymapping::ID_S },
-		{ VK_T, Keymapping::ID_T },
-		{ VK_U, Keymapping::ID_U },
-		{ VK_V, Keymapping::ID_V },
-		{ VK_W, Keymapping::ID_W },
-		{ VK_X, Keymapping::ID_X },
-		{ VK_Y, Keymapping::ID_Y },
-		{ VK_Z, Keymapping::ID_Z },
-
-		// Zahlen
-		{ VK_1, Keymapping::ID_1 },
-		{ VK_2, Keymapping::ID_2 },
-		{ VK_3, Keymapping::ID_3 },
-		{ VK_4, Keymapping::ID_4 },
-		{ VK_5, Keymapping::ID_5 },
-		{ VK_6, Keymapping::ID_6 },
-		{ VK_7, Keymapping::ID_7 },
-		{ VK_8, Keymapping::ID_8 },
-		{ VK_9, Keymapping::ID_9 },
-		{ VK_0, Keymapping::ID_0 },
-
-		// Steuerzeichen
-		{ VK_SPACE,      Keymapping::ID_SPACE },
-		{ VK_TAB,        Keymapping::ID_TAB },
-		{ VK_RETURN,     Keymapping::ID_ENTER },
-		{ VK_BACK,       Keymapping::ID_BACKSPACE },
-		{ VK_MENU,       Keymapping::ID_ALT },
-		{ VK_SHIFT,      Keymapping::ID_SHIFT },
-		{ VK_CONTROL,    Keymapping::ID_CTRL },
-		{ VK_ESCAPE,     Keymapping::ID_ESC },
-	};
-
-	int MapVirtualKeyToInternal(UINT vkCode)
-	{
-		auto it = vkToInternalKeyMap.find(vkCode);
-		return (it != vkToInternalKeyMap.end()) ? it->second : -1;
-	}
+	int MapVirtualKeyToInternal(UINT vkCode);
 #endif
 
 #ifdef __linux__
@@ -255,63 +199,8 @@ namespace Keymapping
 	}
 #endif
 
-	std::unordered_map<int, std::string> internalToStringMap =
-	{
-		{ Keymapping::ID_A, "a" },
-		{ Keymapping::ID_B, "b" },
-		{ Keymapping::ID_C, "c" },
-		{ Keymapping::ID_D, "d" },
-		{ Keymapping::ID_E, "e" },
-		{ Keymapping::ID_F, "f" },
-		{ Keymapping::ID_G, "g" },
-		{ Keymapping::ID_H, "h" },
-		{ Keymapping::ID_I, "i" },
-		{ Keymapping::ID_J, "j" },
-		{ Keymapping::ID_K, "k" },
-		{ Keymapping::ID_L, "l" },
-		{ Keymapping::ID_M, "m" },
-		{ Keymapping::ID_N, "n" },
-		{ Keymapping::ID_O, "o" },
-		{ Keymapping::ID_P, "p" },
-		{ Keymapping::ID_Q, "q" },
-		{ Keymapping::ID_R, "r" },
-		{ Keymapping::ID_S, "s" },
-		{ Keymapping::ID_T, "t" },
-		{ Keymapping::ID_U, "u" },
-		{ Keymapping::ID_V, "v" },
-		{ Keymapping::ID_W, "w" },
-		{ Keymapping::ID_X, "x" },
-		{ Keymapping::ID_Y, "y" },
-		{ Keymapping::ID_Z, "z" },
 
-		// Zahlen
-		{ Keymapping::ID_1, "1" },
-		{ Keymapping::ID_2, "2" },
-		{ Keymapping::ID_3, "3" },
-		{ Keymapping::ID_4, "4" },
-		{ Keymapping::ID_5, "5" },
-		{ Keymapping::ID_6, "6" },
-		{ Keymapping::ID_7, "7" },
-		{ Keymapping::ID_8, "8" },
-		{ Keymapping::ID_9, "9" },
-		{ Keymapping::ID_0, "0" },
-
-		// Steuerzeichen
-		{ Keymapping::ID_SPACE, "SPACE" },
-		{ Keymapping::ID_TAB, "TAB" },
-		{ Keymapping::ID_ENTER, "ENTER" },
-		{ Keymapping::ID_BACKSPACE, "BACKSPACE" },
-		{ Keymapping::ID_ESC, "ESC" },
-
-		{ Keymapping::ID_SHIFT, "LSHIFT" },
-		{ Keymapping::ID_CTRL, "CTRL" },
-		{ Keymapping::ID_ALT, "ALT" },
-	};
-
-	std::string InternalToString(int keycode) {
-		auto it = internalToStringMap.find(keycode);
-		return (it != internalToStringMap.end()) ? it->second : "Not Found";
-	}
+	std::string InternalToString(int keycode);
 
 }
 

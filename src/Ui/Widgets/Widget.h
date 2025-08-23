@@ -1,5 +1,14 @@
 #pragma once
 
+#include <Core/EventSystem/Events/ComponentEvents/ComponentEvent.h>
+
+enum WidgetStyle
+{
+	None,
+	Outlined,
+	OutlinedRounded,
+	Rounded
+};
 
 /**
  * @class Widget
@@ -57,4 +66,13 @@ class Widget
 		 * @param focused True if the widget should be marked as focused.
 		 */
 		void setFocused(bool focused) { m_focused = focused; }
+
+		/*
+		* @brief Draws the widget.
+		*/
+		virtual void draw() = 0;
+
+		virtual void resize(int newHeight, int newWidht) = 0;
+
+		virtual void updateSingleLine(const Core::EventSystem::Events::TextEvents::SingleLineUpdateEvent& ev, EventType type) = 0;
 };

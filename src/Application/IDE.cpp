@@ -1,9 +1,11 @@
 #include <Application/IDE.h>
-#include <Core/Core.h>
+#include <Core/CoreEngine.h>
 #include <Ui/Window/OpenGLWindow.h>
 
 #include <thread>
 #include <iostream>
+
+using Core::CoreEngine;
 
 constexpr int HEIGHT = 480;
 constexpr int WIDHT = 640;
@@ -13,9 +15,9 @@ IDE::~IDE() {}
 
 void IDE::start()
 {
-    Core core(m_running);
+    CoreEngine core(m_running);
 
-    std::thread coreThread(&Core::run, &core);
+    std::thread coreThread(&CoreEngine::run, &core);
 
     // start + setup Ui
     OpenGLWindow win(m_running);
